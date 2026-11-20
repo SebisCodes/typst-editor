@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://typst.giit.ch/sitemap.xml

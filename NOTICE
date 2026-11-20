@@ -1,0 +1,111 @@
+Typst Editor
+Copyright Grünwald Innovation, Sebastian Grünwald
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product bundles the following third-party parts:
+
+typst.ts 0.7.0 with the Typst compiler 0.14.2
+  Copyright: Myriad-Dreamin and the typst.ts contributors (typst.ts);
+             The Typst Project Developers (Typst)
+  License: Apache-2.0 (src/vendor/typst/LICENSE); the attribution notices of the Typst
+           compiler are in src/vendor/typst/NOTICE
+  Source: https://github.com/Myriad-Dreamin/typst.ts, https://github.com/typst/typst
+  Paths: src/vendor/typst/ (the npm packages @myriaddreamin/typst-ts-web-compiler and
+         @myriaddreamin/typst-ts-renderer 0.7.0, unchanged)
+  The WebAssembly files also contain the Rust crates typst.ts and Typst are built on, each
+  under its own license. The complete list of crates and versions of the build is the
+  Cargo.lock of typst.ts 0.7.0
+  (https://github.com/Myriad-Dreamin/typst.ts/blob/v0.7.0/Cargo.lock); each crate declares
+  its license in its manifest, and its license texts are in its source package on crates.io.
+  The crates named inside the WebAssembly files are, as their manifests declare:
+  - MIT, Apache-2.0, or MIT or Apache-2.0 at your choice: most of them, among them serde,
+    regex, rustybuzz, resvg, usvg, image, hayagriva, citationberg, krilla, wasmi, rkyv and
+    syntect;
+  - Apache-2.0: the crates of Typst itself, typst-assets, codex, ciborium, ciborium-ll and
+    the hayro crates;
+  - BSD-2-Clause: kamadak-exif, mutate_once;
+  - BSD-3-Clause: tiny-skia, tiny-skia-path; BSD-3-Clause or Apache-2.0: moxcms, pxfm;
+  - Zlib: slotmap, zlib-rs; Zlib, MIT or Apache-2.0: bytemuck, tinyvec, zune-core,
+    zune-jpeg;
+  - Unicode-3.0: icu_collections, icu_normalizer, icu_provider_blob, icu_segmenter, zerovec;
+  - Unlicense or MIT: aho-corasick, memchr, csv, csv-core;
+  - 0BSD or CC0-1.0: roman-numerals-rs.
+  Typst is a trademark of Typst GmbH; this editor is not made by Typst GmbH.
+
+Icons drawn after Lucide icons: undo-2, redo-2, sun, chevron-down, chevron-left, chevron-right
+  Copyright: Lucide Contributors; the parts Lucide takes from Feather: Cole Bemis
+  License: ISC (Lucide) and MIT (Feather); both texts are at the end of this file
+  Source: https://lucide.dev (https://github.com/lucide-icons/lucide),
+          https://github.com/feathericons/feather
+  Paths: the inline SVG icons of the page templates in src/templates/
+
+The fonts below are the ones the Typst compiler ships (typst-assets 0.14.2,
+https://github.com/typst/typst-assets); their license texts are in src/fonts/LICENSE.txt.
+
+Libertinus Serif 7.051
+  Copyright: The Libertinus Project Authors; Reserved Font Names "Linux Libertine",
+             "Biolinum", "STIX Fonts"
+  License: OFL-1.1 (src/fonts/LICENSE.txt)
+  Source: https://github.com/alerque/libertinus
+  Paths: src/fonts/LibertinusSerif-*.otf
+
+New Computer Modern (text and math)
+  Copyright: Antonis Tsolomitis
+  License: GUST Font License 1.0, which grants LPPL-1.3c or later (src/fonts/LICENSE.txt)
+  Source: https://ctan.org/pkg/newcomputermodern
+  Paths: src/fonts/NewCM10-*.otf, src/fonts/NewCMMath-*.otf
+
+DejaVu Sans Mono 2.37
+  Copyright: Bitstream, Inc. (Bitstream Vera); Tavmjong Bah (glyphs from the Arev fonts);
+             the DejaVu changes are in the public domain
+  License: Bitstream-Vera and the Arev Fonts license (src/fonts/LICENSE.txt)
+  Source: https://github.com/dejavu-fonts/dejavu-fonts
+  Paths: src/fonts/DejaVuSansMono*.ttf
+
+The GitHub mark in the page footer is a trademark of GitHub, Inc., used to link to the
+repository.
+
+License texts of the icons
+
+Lucide (https://github.com/lucide-icons/lucide/blob/main/LICENSE):
+
+ISC License
+
+Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Feather (https://github.com/feathericons/feather/blob/main/LICENSE):
+
+The MIT License (MIT)
+
+Copyright (c) 2013-2023 Cole Bemis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

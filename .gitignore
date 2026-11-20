@@ -1,0 +1,6 @@
+# Packages downloaded to update the vendored compiler (src/vendor/typst) are not part of the site.
+node_modules/
+package-lock.json
+# Test output
+tests/__pycache__/
+*.pyc

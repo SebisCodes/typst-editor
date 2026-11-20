@@ -1,0 +1,287 @@
+/**
+ * Highlighting of Typst code: markup, code (after #), math and raw text, as Typst reads them.
+ * Compiling is done by the real Typst compiler (worker.js); reading and changing the code is in
+ * typst-code.js, typst-rules.js, typst-text.js and typst-pictures.js.
+ *
+ * Classes of the spans: k keyword / function, a named argument, s string / raw,
+ * e number, label, reference, escape, p punctuation and markers, c comment, d math,
+ * h heading text.
+ *
+ * The reader keeps one position in the code and its steps call each other as the brackets
+ * nest, so it stays one closure in one file. The stability test imports
+ * this file and calls highlight(): the name stays.
+ */
+
+const KEYWORDS = new Set('let set show if else for in while break continue return import include as context and or not none auto true false'.split(' '));
+/** Keywords after # that take the rest of their line as code. */
+const LINE_KEYWORDS = new Set('let set show import include if for while return context break continue'.split(' '));
+/** How far ahead a name, number, marker or label is looked for. */
+const LOOK_AHEAD = 80;
+const SHORT_LOOK_AHEAD = 12;
+/** How far ahead a number, a run of backticks, or the text after a name is looked at. */
+const NEAR_LOOK_AHEAD = 40;
+const SPACE_LOOK_AHEAD = 200;
+const NUMBER = /^(\d*\.)?\d+(e[+-]?\d+)?(pt|mm|cm|in|em|fr|%|deg|rad)?/;
+const IDENTIFIER = /^[\p{L}_][\p{L}\p{N}_-]*/u;
+
+/**
+ * Returns text with the characters of HTML escaped.
+ * @param {*} text - the text.
+ * @returns {string} the text with & < > " as entities.
+ */
+export function escapeHtml(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * Returns the code highlighted as HTML; very deep nesting (thousands of brackets) is shown as
+ * plain text.
+ * @param {string} code - the Typst code.
+ * @returns {string} the HTML with a span per highlighted part.
+ */
+export function highlight(code) {
+    try { return highlightCode(code); } catch (e) { return escapeHtml(code); }
+}
+
+/**
+ * Returns the code highlighted as HTML: markup at the top, each stray closing bracket as text.
+ * @param {string} src - the Typst code.
+ * @returns {string} the HTML.
+ * @throws {RangeError} when the nesting is too deep for the call stack.
+ */
+function highlightCode(src) {
+    let i = 0;
+    const n = src.length;
+    let out = '';
+    while (i < n) {
+        out += readMarkup(null);
+        if (i < n) { out += escapeHtml(src[i]); i++; }   // a stray closing bracket at the top
+    }
+    return out;
+
+    /**
+     * Returns text in a span of a class.
+     * @param {string} className - the class.
+     * @param {string} text - the text.
+     * @returns {string} the span.
+     */
+    function formatSpan(className, text) {
+        return `<span class="${className}">${escapeHtml(text)}</span>`;
+    }
+
+    /**
+     * Tells whether a character can start a name.
+     * @param {string|undefined} character - the character.
+     * @returns {boolean} true for a letter or "_".
+     */
+    function isNameStart(character) {
+        return /[\p{L}_]/u.test(character || '');
+    }
+
+    /**
+     * Returns the name that starts at a place, without "-" at its end.
+     * @param {number} place - the place.
+     * @returns {string} the name, "" when none starts there.
+     */
+    function getNameAt(place) {
+        const match = IDENTIFIER.exec(src.slice(place, place + LOOK_AHEAD));
+        return match ? match[0].replace(/-+$/, '') : '';
+    }
+
+    /**
+     * Reads a comment at the position: // to the end of the line, or /* … *\/ with the
+     * comments nested in it.
+     * @returns {string} the highlighted comment.
+     */
+    function readComment() {
+        if (src[i + 1] === '/') {
+            const lineEnd = src.indexOf('\n', i);
+            const end = lineEnd < 0 ? n : lineEnd;
+            const text = src.slice(i, end);
+            i = end;
+            return formatSpan('c', text);
+        }
+        let depth = 0, k = i;
+        while (k < n) {
+            if (src.startsWith('/*', k)) { depth++; k += 2; continue; }
+            if (src.startsWith('*/', k)) { depth--; k += 2; if (!depth) break; continue; }
+            k++;
+        }
+        const text = src.slice(i, k);
+        i = k;
+        return formatSpan('c', text);
+    }
+
+    /**
+     * Reads a string at the position, to its closing quote or the end of its line.
+     * @returns {string} the highlighted string.
+     */
+    function readString() {
+        let k = i + 1;
+        while (k < n && src[k] !== '"' && src[k] !== '\n') k += src[k] === '\\' ? 2 : 1;
+        k = Math.min(n, k + 1);
+        const text = src.slice(i, k);
+        i = k;
+        return formatSpan('s', text);
+    }
+
+    /**
+     * Reads math at the position, from $ to $.
+     * @returns {string} the highlighted math.
+     */
+    function readMath() {
+        let k = i + 1;
+        while (k < n && src[k] !== '$') k += src[k] === '\\' ? 2 : 1;
+        k = Math.min(n, k + 1);
+        const text = src.slice(i, k);
+        i = k;
+        return formatSpan('d', text);
+    }
+
+    /**
+     * Reads raw text at the position: a block in three or more backticks, `` as empty raw
+     * text, or `…` inline.
+     * @returns {string} the highlighted raw text.
+     */
+    function readRaw() {
+        const ticks = /^`+/.exec(src.slice(i, i + NEAR_LOOK_AHEAD))[0];
+        let k;
+        if (ticks.length >= 3) { k = src.indexOf(ticks, i + ticks.length); k = k < 0 ? n : k + ticks.length; }
+        else if (ticks.length === 2) k = i + 2;
+        else { k = src.indexOf('`', i + 1); k = k < 0 ? n : k + 1; }
+        const text = src.slice(i, k);
+        i = k;
+        return formatSpan('s', text);
+    }
+
+    /**
+     * Reads code up to a closing bracket at this level.
+     * @param {string|null} close - ")" or "}", null for none.
+     * @param {boolean} line - true when the code also ends at a line break (after a keyword).
+     * @returns {string} the highlighted code.
+     */
+    function readCode(close, line) {
+        let part = '';
+        while (i < n) {
+            const c = src[i];
+            if (c === close) return part;
+            if (line && (c === '\n' || c === ';' || c === ']')) return part;
+            if (c === '/' && (src[i + 1] === '/' || src[i + 1] === '*')) { part += readComment(); continue; }
+            if (c === '"') { part += readString(); continue; }
+            if (c === '$') { part += readMath(); continue; }
+            if (/\d/.test(c) || (c === '.' && /\d/.test(src[i + 1] || ''))) {
+                const number = NUMBER.exec(src.slice(i, i + NEAR_LOOK_AHEAD));
+                part += formatSpan('e', number[0]);
+                i += number[0].length;
+                continue;
+            }
+            if (isNameStart(c)) { part += readName(line); continue; }
+            // The brackets are read here, without a step of their own, so deep nesting takes as few calls as it can.
+            if (c === '(') { i++; part += formatSpan('p', '(') + readCode(')', false); if (src[i] === ')') { part += formatSpan('p', ')'); i++; } continue; }
+            if (c === '{') { i++; part += formatSpan('p', '{') + readCode('}', false); if (src[i] === '}') { part += formatSpan('p', '}'); i++; } continue; }
+            if (c === '[') { i++; part += formatSpan('p', '[') + readMarkup(']'); if (src[i] === ']') { part += formatSpan('p', ']'); i++; } continue; }
+            if (/\s/.test(c)) {
+                const space = /^\s+/.exec(src.slice(i, i + SPACE_LOOK_AHEAD))[0];
+                const kept = line ? space.split('\n')[0] : space;
+                if (!kept.length) return part;
+                part += kept;
+                i += kept.length;
+                continue;
+            }
+            part += formatSpan('p', c);
+            i++;
+        }
+        return part;
+    }
+
+    /**
+     * Reads a name in code: a keyword, a named argument (before ":"), a function (before a
+     * bracket) or a plain name.
+     * @param {boolean} line - true inside a keyword's line, where no named arguments are.
+     * @returns {string} the highlighted name.
+     */
+    function readName(line) {
+        const name = getNameAt(i);
+        const after = src.slice(i + name.length, i + name.length + NEAR_LOOK_AHEAD);
+        i += name.length;
+        if (KEYWORDS.has(name)) return formatSpan('k', name);
+        if (/^\s*:(?!:)/.test(after) && !line) return formatSpan('a', name);
+        if (/^[([]/.test(after)) return formatSpan('k', name);
+        return escapeHtml(name);
+    }
+
+    /**
+     * Reads "#" in markup: a keyword line, a function call with its arguments and content, or
+     * a block.
+     * @returns {string} the highlighted expression.
+     */
+    function readEmbedded() {
+        const name = getNameAt(i + 1);
+        if (name && LINE_KEYWORDS.has(name)) { i += 1 + name.length; return formatSpan('k', '#' + name) + readCode(null, true); }
+        let part = '';
+        if (name) { part += formatSpan('k', '#' + name); i += 1 + name.length; }
+        else if (src[i + 1] === '(' || src[i + 1] === '{' || src[i + 1] === '[') { part += formatSpan('k', '#'); i++; }
+        else { i++; return '#'; }
+        for (;;) {
+            const c = src[i];
+            if (c === '(') { i++; part += formatSpan('p', '(') + readCode(')', false); if (src[i] === ')') { part += formatSpan('p', ')'); i++; } continue; }
+            if (c === '{') { i++; part += formatSpan('p', '{') + readCode('}', false); if (src[i] === '}') { part += formatSpan('p', '}'); i++; } continue; }
+            if (c === '[') { i++; part += formatSpan('p', '[') + readMarkup(']'); if (src[i] === ']') { part += formatSpan('p', ']'); i++; } continue; }
+            if (c === '.' && isNameStart(src[i + 1])) {
+                const field = getNameAt(i + 1);
+                i += 1 + field.length;
+                part += '.' + (/^[([]/.test(src[i] || '') ? formatSpan('k', field) : escapeHtml(field));
+                continue;
+            }
+            return part;
+        }
+    }
+
+    /**
+     * Reads markup up to a closing bracket: headings and list markers at the start of a line,
+     * comments, escapes, embedded code, math, raw text, labels, references and strong /
+     * emphasis markers; plain text between them.
+     * @param {string|null} close - "]", null at the top.
+     * @returns {string} the highlighted markup.
+     */
+    function readMarkup(close) {
+        let part = '', heading = false, text = '';
+        /**
+         * Adds the plain text read so far to the part.
+         * @returns {void}
+         */
+        const addText = () => { if (text) { part += escapeHtml(text); text = ''; } };
+        let lineStart = i === 0 || src[i - 1] === '\n';
+        while (i < n) {
+            const c = src[i];
+            if (close && c === close) break;
+            if (c === '\n') { addText(); if (heading) { part += '</span>'; heading = false; } part += '\n'; i++; lineStart = true; continue; }
+            if (lineStart && (c === ' ' || c === '\t')) { text += c; i++; continue; }
+            if (lineStart) {
+                lineStart = false;
+                const headingMarker = /^(=+)(?=[ \t])/.exec(src.slice(i, i + SHORT_LOOK_AHEAD));
+                if (headingMarker) { addText(); part += formatSpan('k', headingMarker[1]) + '<span class="h">'; heading = true; i += headingMarker[1].length; continue; }
+                const listMarker = /^([-+/]|\d+\.)(?=[ \t])/.exec(src.slice(i, i + SHORT_LOOK_AHEAD));
+                if (listMarker) { addText(); part += formatSpan('p', listMarker[1]); i += listMarker[1].length; continue; }
+            }
+            if (c === '/' && (src[i + 1] === '/' || src[i + 1] === '*')) { addText(); part += readComment(); continue; }
+            if (c === '\\') {
+                addText();
+                const escape = /^\\(u\{[0-9a-fA-F]+\}|[\s\S])/.exec(src.slice(i, i + SHORT_LOOK_AHEAD));
+                if (escape && escape[1] !== '\n') { part += formatSpan('e', escape[0]); i += escape[0].length; } else { part += '\\'; i++; }
+                continue;
+            }
+            if (c === '#' && (isNameStart(src[i + 1]) || /[([{]/.test(src[i + 1] || ''))) { addText(); part += readEmbedded(); continue; }
+            if (c === '$') { addText(); part += readMath(); continue; }
+            if (c === '`') { addText(); part += readRaw(); continue; }
+            if (c === '<') { const label = /^<[\p{L}\p{N}_:.-]+>/u.exec(src.slice(i, i + LOOK_AHEAD)); if (label) { addText(); part += formatSpan('e', label[0]); i += label[0].length; continue; } }
+            if (c === '@') { const reference = /^@[\p{L}\p{N}_:.-]*[\p{L}\p{N}_]/u.exec(src.slice(i, i + LOOK_AHEAD)); if (reference) { addText(); part += formatSpan('e', reference[0]); i += reference[0].length; continue; } }
+            if (c === '*' || c === '_') { addText(); part += formatSpan('p', c); i++; continue; }
+            text += c;
+            i++;
+        }
+        addText();
+        if (heading) part += '</span>';
+        return part;
+    }
+}

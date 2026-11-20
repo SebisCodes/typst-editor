@@ -1,0 +1,78 @@
+/* ==========================================================================
+   typst.giit.ch - the compiled pages: one <svg> per page from the Typst
+   renderer, the text layer for selecting, the frame of the cursor's place,
+   the field for editing text on the page and the line where a moved
+   picture goes.
+   ========================================================================== */
+
+/* The fonts Typst ships, for the field that edits text on the page (each loaded when the field uses it). */
+@font-face { font-family: "Libertinus Serif"; src: url(../fonts/LibertinusSerif-Regular.otf) format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url(../fonts/LibertinusSerif-Italic.otf) format("opentype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url(../fonts/LibertinusSerif-Semibold.otf) format("opentype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url(../fonts/LibertinusSerif-SemiboldItalic.otf) format("opentype"); font-weight: 600; font-style: italic; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url(../fonts/LibertinusSerif-Bold.otf) format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Libertinus Serif"; src: url(../fonts/LibertinusSerif-BoldItalic.otf) format("opentype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "New Computer Modern"; src: url(../fonts/NewCM10-Regular.otf) format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "New Computer Modern"; src: url(../fonts/NewCM10-Italic.otf) format("opentype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "New Computer Modern"; src: url(../fonts/NewCM10-Bold.otf) format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "New Computer Modern"; src: url(../fonts/NewCM10-BoldItalic.otf) format("opentype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "DejaVu Sans Mono"; src: url(../fonts/DejaVuSansMono.ttf) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "DejaVu Sans Mono"; src: url(../fonts/DejaVuSansMono-Oblique.ttf) format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "DejaVu Sans Mono"; src: url(../fonts/DejaVuSansMono-Bold.ttf) format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "DejaVu Sans Mono"; src: url(../fonts/DejaVuSansMono-BoldOblique.ttf) format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+
+.sheet {
+    position: relative; flex: none; overflow: hidden;
+    background: #ffffff; color: #000000; color-scheme: light;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.sheet svg.typst-page { display: block; width: 100%; height: 100%; overflow: hidden; }
+.sheet svg, .typst-defs { fill: none; }
+.typst-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Text layer: transparent text over the glyphs, so the text can be selected and copied. */
+.sheet .typst-text { pointer-events: bounding-box; }
+.sheet .tsel, .sheet .tsel span {
+    position: fixed; left: 0; width: 100%; height: 100%;
+    white-space: pre; text-align: justify; text-align-last: justify;
+    color: transparent; line-height: 1;
+}
+.sheet .tsel::selection, .sheet .tsel span::selection { color: transparent; background: rgba(26, 115, 232, 0.3); }
+.sheet .outline_glyph path, .sheet path.outline_glyph { fill: var(--glyph_fill); stroke: var(--glyph_stroke); }
+.sheet .pseudo-link { fill: transparent; pointer-events: all; }
+
+/* The cursor's place in the code */
+.sheet .source { position: absolute; pointer-events: none; outline: 2px solid rgba(26, 115, 232, 0.55); border-radius: 2px; background: rgba(26, 115, 232, 0.07); }
+
+/* Editing text on the page: the field shows its text as the page does (size,
+   weight, slant, font and color come with it from text-edit.js) over the page in
+   every theme; #pages outweighs the general rule for fields (style.css). */
+#pages .sheet .text-in-place {
+    position: absolute; z-index: 5; box-sizing: border-box; margin: 0; padding: 0 2px;
+    field-sizing: content; width: auto; max-width: none; box-shadow: none; resize: none; overflow: hidden; white-space: pre;
+    font-family: "Libertinus Serif", Georgia, serif; line-height: 1; color: #000000;
+    background: transparent; border: 0; border-radius: 2px;
+    outline: 2px solid rgba(26, 115, 232, 0.8); outline-offset: 1px; caret-color: #1a73e8;
+}
+
+/* While the compiler loads, compiles, or the code has errors */
+.stage.stale .pages .sheet { opacity: .55; }
+.stage.loading .stale-hint { display: block; background: var(--surface); color: var(--muted); }
+
+@media print { .sheet .source, .sheet .text-in-place { display: none; } }
+
+/* Export: vector pictures need no sharpness */
+#export[data-vector="true"] .only-raster { display: none; }
+
+/* Problems from the compiler: message and hints */
+.problems .pr-text { display: flex; flex-direction: column; gap: 2px; }
+.problems .pr-hint { color: var(--muted); font-size: .95em; }
+
+/* Moving pictures on the page: the picture is grabbed, the line shows where it goes. */
+#pages .sheet image.typst-image { cursor: grab; -webkit-touch-callout: none; }
+body.picture-dragging, body.picture-dragging * { cursor: grabbing !important; user-select: none; }
+.sheet .is-moving { opacity: .45; }
+.sheet .picture-target { position: absolute; z-index: 6; height: 0; pointer-events: none; border-top: 3px solid #1a73e8; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .8); }
+.sheet .picture-target.vertical { width: 0; border-top: 0; border-left: 3px solid #1a73e8; }
+.sheet .picture-target.swap { box-sizing: border-box; border: 3px solid #1a73e8; border-radius: 4px; background: rgba(26, 115, 232, .12); }
+@media print { .sheet .picture-target { display: none; } }

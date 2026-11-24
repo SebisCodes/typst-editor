@@ -9,8 +9,8 @@
 import { openDialog, openConfirmation } from './dialogs.js?v=5';
 import { createZip } from './zip.js?v=4';
 import { saveFile, getSafeName } from './util.js?v=3';
-import { store, LIST } from './files.js?v=10';
-import { assets, getDataUrlBytes } from './assets.js?v=6';
+import { store, LIST } from './files.js?v=11';
+import { assets, getDataUrlBytes } from './assets.js?v=7';
 import { createCard, formatSize } from './files-card.js?v=2';
 
 const STORAGE_FULL = 'The browser storage is full - delete or download some documents first';

@@ -13,20 +13,20 @@
  * problems of the placeholders join the compiler's.
  */
 
-import { createCompiler } from './compiler.js?v=7';
+import { createCompiler } from './compiler.js?v=8';
 import { state, ui, areas } from './state.js?v=3';
-import { renderStatus, renderProblemMarks } from './code-view.js?v=6';
-import { showPages } from './pages.js?v=6';
+import { renderStatus, renderProblemMarks } from './code-view.js?v=7';
+import { showPages } from './pages.js?v=7';
 import { updateRuns } from './text-runs.js?v=4';
-import { showSourceMark } from './source-mark.js?v=6';
-import { renderProblems } from './problems.js?v=6';
-import { renderFilesTab } from './files-tab.js?v=6';
-import { renderOutline } from './outline.js?v=6';
-import { renderSettingsPanel } from './settings-panel.js?v=6';
+import { showSourceMark } from './source-mark.js?v=7';
+import { renderProblems } from './problems.js?v=7';
+import { renderFilesTab } from './files-tab.js?v=7';
+import { renderOutline } from './outline.js?v=7';
+import { renderSettingsPanel } from './settings-panel.js?v=7';
 import { TEMPLATE_SYNTAX, getTemplateProblems } from './typst-template.js?v=1';
 import { getCompileInput, getCompileView, setExampleViewFailed, EXAMPLE_VIEW } from './preview-views.js?v=1';
 import { convertCompileResult } from './typst-examples.js?v=1';
-import { renderTemplateControls } from './template-panel.js?v=3';
+import { renderTemplateControls } from './template-panel.js?v=4';
 
 /** How long the compile waits after a change, in milliseconds. */
 export const COMPILE_DELAY = 220;

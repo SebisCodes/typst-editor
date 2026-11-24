@@ -6,10 +6,10 @@
 
 import { state, ui, NARROW_SCREEN, isCompiled } from './state.js?v=3';
 import { getRunAtPlace, getRunOfElement, getElementPlace, getTextBox } from './text-runs.js?v=4';
-import { showCodePosition } from './code-view.js?v=6';
-import { updatePageLabel, VIEW_LINE_DIVISOR } from './zoom.js?v=6';
-import { isTextEditing, isTextEditPending } from './text-edit.js?v=6';
-import { showPane } from './layout.js?v=6';
+import { showCodePosition } from './code-view.js?v=7';
+import { updatePageLabel, VIEW_LINE_DIVISOR } from './zoom.js?v=7';
+import { isTextEditing, isTextEditPending } from './text-edit.js?v=7';
+import { showPane } from './layout.js?v=7';
 import { handlePictureClick } from './picture-remove.js?v=1';
 
 /** The frame is not shown when the cursor is this far past the end of the run before it. */

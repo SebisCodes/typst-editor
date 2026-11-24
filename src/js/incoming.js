@@ -11,15 +11,17 @@
  * replaced. A document a page hands over is kept in memory only, never stored.
  */
 
-import { store } from './files.js?v=10';
-import { assets } from './assets.js?v=6';
+import { store } from './files.js?v=11';
+import { assets } from './assets.js?v=7';
 import { BLANK } from './samples.js?v=3';
-import { VIEWER } from './sync.js?v=24';
+import { VIEWER } from './sync.js?v=25';
 import { state, ui, AI_DOCUMENT_NAME, showToast } from './state.js?v=3';
-import { setCode } from './history.js?v=6';
-import { startCompile, waitForCompile } from './compile.js?v=6';
-import { openDocument, openNewDocument } from './documents.js?v=6';
-import { renderInsertPanel } from './insert-panel.js?v=6';
+import { setCode } from './history.js?v=7';
+import { startCompile, waitForCompile } from './compile.js?v=7';
+import { openDocument, openNewDocument } from './documents.js?v=7';
+import { renderInsertPanel } from './insert-panel.js?v=7';
+import { renderFilesTab } from './files-tab.js?v=7';
+import { stopTextEdit } from './text-edit.js?v=7';
 
 
 /**
@@ -124,4 +126,25 @@ function addPageDocument(external) {
     state.assets = files;
     renderInsertPanel();
     startCompile();
+}
+
+/**
+ * Adds files the page sends to its document (sync.js's addAssets): stored with that document,
+ * also while another one is open, its code as it is. While it is open, a text edit in the preview
+ * goes into the code first, then the files panel, the insert panel and the compiled pages show them.
+ * @param {string} id - the id of the page's document.
+ * @param {Object<string, string>} files - the files by name, as data URIs.
+ * @returns {Promise<boolean>} true when the files are stored; false when the document is gone or is the user's own.
+ */
+export async function addPageAssets(id, files) {
+    const entry = store.getEntry(id);
+    if (!entry || !entry.page || !store.isInMemory(id)) return false;
+    const all = await assets.merge(id, files);
+    if (state.fileId !== id) return true;
+    stopTextEdit(true);
+    state.assets = all;
+    renderInsertPanel();
+    renderFilesTab();
+    startCompile();
+    return true;
 }

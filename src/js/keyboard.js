@@ -6,11 +6,11 @@
 
 import { openDialog } from './dialogs.js?v=5';
 import { state, ui, areas, TYPING_FIELDS, getElement } from './state.js?v=3';
-import { undo, redo } from './history.js?v=6';
-import { setZoom, getCurrentPage, showPage, ZOOM_STEP } from './zoom.js?v=6';
-import { applyNewMenuSwitch, isNewMenuOpen } from './documents.js?v=6';
-import { showPrintDialog } from './export.js?v=6';
-import { openExportDialog, saveOnShortcut } from './export-dialog.js?v=6';
+import { undo, redo } from './history.js?v=7';
+import { setZoom, getCurrentPage, showPage, ZOOM_STEP } from './zoom.js?v=7';
+import { applyNewMenuSwitch, isNewMenuOpen } from './documents.js?v=7';
+import { showPrintDialog } from './export.js?v=7';
+import { openExportDialog, saveOnShortcut } from './export-dialog.js?v=7';
 
 /** The keys of the shortcuts with Ctrl or Cmd, as KeyboardEvent.key gives them. */
 const SAVE_KEY = 's', EXPORT_KEY = 'e', OPEN_KEY = 'o', PRINT_KEY = 'p', REDO_KEY = 'y', ZOOM_OUT_KEY = '-';

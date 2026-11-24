@@ -13,10 +13,10 @@ import { createZip } from './zip.js?v=4';
 import { openDialog } from './dialogs.js?v=5';
 import { saveFile, getSafeName } from './util.js?v=3';
 import { state, ui, areas, getElement, showToast, PIXELS_PER_POINT } from './state.js?v=3';
-import { waitForCompile } from './compile.js?v=6';
-import { getPageSize } from './zoom.js?v=6';
-import { isTextEditing, stopTextEdit } from './text-edit.js?v=6';
-import { getPagePictures, exportPdf, createTypZip, getFileEntries, loadPicturePages, getPicturePagesInfo } from './export.js?v=6';
+import { waitForCompile } from './compile.js?v=7';
+import { getPageSize } from './zoom.js?v=7';
+import { isTextEditing, stopTextEdit } from './text-edit.js?v=7';
+import { getPagePictures, exportPdf, createTypZip, getFileEntries, loadPicturePages, getPicturePagesInfo } from './export.js?v=7';
 import { getViewTitle, getTemplateViewTitle } from './preview-views.js?v=1';
 
 const PICTURE_FORMATS = /^(png|jpeg|webp|svg)$/;

@@ -15,7 +15,7 @@
  * written and the view's key.
  */
 
-import { getDataUrlBytes } from './assets.js?v=6';
+import { getDataUrlBytes } from './assets.js?v=7';
 
 /** The longest a compile may take, in milliseconds. */
 const TIME_LIMIT = 20000;

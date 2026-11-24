@@ -6,9 +6,9 @@
 
 import { escapeHtml } from './typst.js?v=8';
 import { state, ui, NARROW_SCREEN } from './state.js?v=3';
-import { showCodePosition } from './code-view.js?v=6';
-import { showSourceMark } from './source-mark.js?v=6';
-import { showPane } from './layout.js?v=6';
+import { showCodePosition } from './code-view.js?v=7';
+import { showSourceMark } from './source-mark.js?v=7';
+import { showPane } from './layout.js?v=7';
 
 /** The most problems the list shows. */
 const MAX_LISTED_PROBLEMS = 60;

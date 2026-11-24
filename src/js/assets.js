@@ -84,8 +84,8 @@ export const assets = {
     async get(id) {
         if (memory.has(id) || isMemoryOnly(id)) return memory.get(id) || {};
         const files = (await runTransaction('readonly', objectStore => objectStore.get(id))) || {};
-        memory.set(id, files);
-        return files;
+        if (!memory.has(id)) memory.set(id, files);             // a write while reading holds the newer set
+        return memory.get(id);
     },
 
     /**
@@ -137,10 +137,21 @@ export const assets = {
      * @returns {Promise<Object<string, string>>} all files of the document.
      */
     async add(id, name, dataUrl) {
-        const files = { ...(await this.get(id)) };
-        files[name] = dataUrl;
-        await this.set(id, files);
-        return files;
+        return this.merge(id, { [name]: dataUrl });
+    },
+
+    /**
+     * Adds or replaces several files of a document in one write. The set written is the one this
+     * page holds at the moment of writing, so writes that overlap keep each other's files. A
+     * command that returns the set as it is once the write is done, as the caller shows it.
+     * @param {string} id - the document's id.
+     * @param {Object<string, string>} added - name -> data URI.
+     * @returns {Promise<Object<string, string>>} all files of the document.
+     */
+    async merge(id, added) {
+        await this.get(id);
+        await this.set(id, { ...this.getCached(id), ...added });
+        return this.getCached(id);
     },
 
     /**
@@ -151,10 +162,11 @@ export const assets = {
      * @returns {Promise<Object<string, string>>} the files left.
      */
     async remove(id, name) {
-        const files = { ...(await this.get(id)) };
+        await this.get(id);
+        const files = { ...this.getCached(id) };
         delete files[name];
         await this.set(id, files);
-        return files;
+        return this.getCached(id);
     },
 
     /**

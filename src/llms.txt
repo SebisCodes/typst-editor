@@ -76,13 +76,14 @@ AI Assistant in a frame: add `allow="clipboard-write"` to the iframe so "Copy pr
 Editor -> page (sent to the page around the editor, or to window.opener in its own window):
 - `typsteditor:ready` {version:2, editor, window} - can take a document
 - `typsteditor:loaded` {id, name, target?} - after each load; remember the id (target:"new" for a new document from the AI, which is not yours)
-- `typsteditor:change` {id, name, content, assetsChanged, assetsRemoved} - a real edit of your document (not after load); adding, replacing or removing a picture or file counts
+- `typsteditor:change` {id, name, content, assetsChanged, assetsRemoved} - a real edit of your document (not after load); adding, replacing or removing a picture or file counts (the files of your `typsteditor:assets` are your page's already)
 - `typsteditor:save` {editor, event, id, name, content, assets, assetsChanged, assetsRemoved, updated} - Save / Ctrl+S (from anywhere in the editor), or the answer to get. assets holds ALL pictures and files of your document as data URIs; assetsChanged / assetsRemoved name those that differ from what your page has (after load, save or get)
 - `typsteditor:closing` {id, name, unsaved, content?} - own window closes (always sent; content only when unsaved, id null before the first load)
 - `typsteditor:reload` {id, unsaved} - inside your page, F5 / Ctrl+R / Cmd+R do not reload the editor; ask the user yourself (Ctrl+W cannot be caught by a page)
 - `typsteditor:pdf` {id, name, pages, pdf} or {id, error} - the answer to your `typsteditor:pdf`: pdf is a data URI of the PDF made by the Typst compiler (real, selectable text; `dpi` is not needed and ignored); a document with errors gets `error`
 - `typsteditor:key-request` {reason:"missing"} - the editor has no AI key in this session yet
 - `typsteditor:ai-click` {request, id, name} - the user pressed the AI button (only with ai.dialog:"page"); answer within 300 ms
+- `typsteditor:assets` {id, added} or {id, error} - the answer to your `typsteditor:assets`: the names added, or why none was added (id null before the first load)
 
 `?embed=1&save=0` hides the editor's Save button (Ctrl+S still sends `typsteditor:save`) - for pages with their own Save button.
 
@@ -99,6 +100,7 @@ Page -> editor (only from the page around the editor or the opener; after its fi
 - `typsteditor:pdf` - your document as a PDF from the Typst compiler, answered with `typsteditor:pdf`
 - `typsteditor:ai` {label?, prompt?, endpoint?, key?, base?, assets?, answer?, dialog?} or {clear:true} or {decline:true, message?} - AI through your server
 - `typsteditor:ai-click` {request, handled} - the answer to ai-click: handled:true when your page shows its own AI dialog
+- `typsteditor:assets` {add: {"<name>": "data:<type>;base64,<data>"}} - adds files to your document (a file of the same name takes the new content, the others stay) with the text as it is: your page holds them already, so no change message, no undo step and no automatic save follow, and assetsChanged names only other files. 1 to 20 PNG, JPEG, GIF, WebP or PDF as base64 data URIs under a plain name whose extension fits the type; at most 40 MB per message, waiting and for the document with its files; one file outside these rules refuses the whole message. The files wait for your last load and are stored in the order sent; answered with `typsteditor:assets`
 - `typsteditor:template` {placeholders, assets?} or {clear:true} - with ?template=, the placeholders with examples and example pictures
 
 Your document is the one your page loaded (or opened with ?src=). change, save, closing and get are only ever about it - never about other documents in the user's browser, also when the user opens them in the editor. A load replaces only a document that came from your page before (same name and origin), never the user's own; the AI settings and the hook from load apply only while your document is open. Your document is kept in memory only - it is never stored in the user's browser and is gone when the editor closes.

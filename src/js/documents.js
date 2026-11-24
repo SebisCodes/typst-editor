@@ -9,18 +9,18 @@
  *   3. show it from the top, compile it, and compile again once its files are read.
  */
 
-import { store } from './files.js?v=10';
-import { assets } from './assets.js?v=6';
+import { store } from './files.js?v=11';
+import { assets } from './assets.js?v=7';
 import { START, TEMPLATES, BLANK } from './samples.js?v=3';
 import { openConfirmation } from './dialogs.js?v=5';
 import { state, ui, areas, DEFAULT_NAME, NARROW_SCREEN, getElement, getElements, showToast } from './state.js?v=3';
-import { setCode, addHistoryStep, updateHistoryButtons, undo, redo } from './history.js?v=6';
-import { startCompile } from './compile.js?v=6';
-import { saveWaitingEdits } from './storage.js?v=6';
-import { showCodePosition } from './code-view.js?v=6';
-import { isTextEditing, stopTextEdit } from './text-edit.js?v=6';
-import { renderInsertPanel } from './insert-panel.js?v=6';
-import { createFilesDialog } from './files-dialog.js?v=3';
+import { setCode, addHistoryStep, updateHistoryButtons, undo, redo } from './history.js?v=7';
+import { startCompile } from './compile.js?v=7';
+import { saveWaitingEdits } from './storage.js?v=7';
+import { showCodePosition } from './code-view.js?v=7';
+import { isTextEditing, stopTextEdit } from './text-edit.js?v=7';
+import { renderInsertPanel } from './insert-panel.js?v=7';
+import { createFilesDialog } from './files-dialog.js?v=4';
 
 const STORAGE_FULL = 'The browser storage is full - delete or download documents under "My documents" first';
 /** The lines a start over keeps at the top: rules, imports, definitions and comments. */

@@ -10,14 +10,14 @@
 
 import { formatString } from './typst-rules.js?v=3';
 import { findFileReferences } from './typst-code.js?v=3';
-import { store } from './files.js?v=10';
-import { assets, getFreeName, readAsDataUrl } from './assets.js?v=6';
+import { store } from './files.js?v=11';
+import { assets, getFreeName, readAsDataUrl } from './assets.js?v=7';
 import { state, areas, showToast } from './state.js?v=3';
-import { setCode } from './history.js?v=6';
-import { startCompile } from './compile.js?v=6';
-import { addSnippet } from './code-insert.js?v=6';
-import { renderInsertPanel } from './insert-panel.js?v=6';
-import { renderFilesTab } from './files-tab.js?v=6';
+import { setCode } from './history.js?v=7';
+import { startCompile } from './compile.js?v=7';
+import { addSnippet } from './code-insert.js?v=7';
+import { renderInsertPanel } from './insert-panel.js?v=7';
+import { renderFilesTab } from './files-tab.js?v=7';
 
 /** The media type of a file by its extension. */
 export const FILE_TYPES = {

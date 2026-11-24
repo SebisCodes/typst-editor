@@ -15,14 +15,14 @@
 import { findPictures, getPictureMovedTo, getPictureMovedBeside, getPicturesSwapped, getPictureRemoved } from './typst-pictures.js?v=4';
 import { state, ui, NARROW_SCREEN, showToast, getNumberInRange, isCompiled } from './state.js?v=3';
 import { getPictureElements, getPictureCode, getPicturePlaces, getDropPlaces, getDropTarget } from './picture-places.js?v=5';
-import { setCode, addTypingStep } from './history.js?v=6';
-import { showCodePosition } from './code-view.js?v=6';
-import { isTextEditing } from './text-edit.js?v=6';
-import { showPane } from './layout.js?v=6';
+import { setCode, addTypingStep } from './history.js?v=7';
+import { showCodePosition } from './code-view.js?v=7';
+import { isTextEditing } from './text-edit.js?v=7';
+import { showPane } from './layout.js?v=7';
 import { getCopiedCodeRange } from './template-expansion.js?v=2';
 import { getElementPlace } from './text-runs.js?v=4';
-import { showSourceMark } from './source-mark.js?v=6';
-import { VIEWER } from './sync.js?v=24';
+import { showSourceMark } from './source-mark.js?v=7';
+import { VIEWER } from './sync.js?v=25';
 import { startPictureRemover } from './picture-remove.js?v=1';
 
 /** How far a mouse or pen moves before the drag starts, in pixels. */

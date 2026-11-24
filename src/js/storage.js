@@ -9,11 +9,11 @@
  *   - a hidden tab without edits of its own shows the version the other tab stored.
  */
 
-import { store } from './files.js?v=10';
-import { assets } from './assets.js?v=6';
+import { store } from './files.js?v=11';
+import { assets } from './assets.js?v=7';
 import { state, areas, showToast } from './state.js?v=3';
-import { setCode } from './history.js?v=6';
-import { showFileName } from './documents.js?v=6';
+import { setCode } from './history.js?v=7';
+import { showFileName } from './documents.js?v=7';
 
 const SETTINGS_KEY = 'typsteditor.v1';
 /** How long after typing the document is stored, in milliseconds. */

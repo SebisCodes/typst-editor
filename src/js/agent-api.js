@@ -4,14 +4,14 @@
  * (each an undo step).
  */
 
-import { store } from './files.js?v=10';
+import { store } from './files.js?v=11';
 import { BLANK } from './samples.js?v=3';
 import { state, ui, AI_DOCUMENT_NAME, areas } from './state.js?v=3';
-import { setCode } from './history.js?v=6';
-import { waitForCompile } from './compile.js?v=6';
-import { getLineIndex, getLineStartPlace, showCodePosition } from './code-view.js?v=6';
-import { showSourceMark } from './source-mark.js?v=6';
-import { openDocument, openNewDocument } from './documents.js?v=6';
+import { setCode } from './history.js?v=7';
+import { waitForCompile } from './compile.js?v=7';
+import { getLineIndex, getLineStartPlace, showCodePosition } from './code-view.js?v=7';
+import { showSourceMark } from './source-mark.js?v=7';
+import { openDocument, openNewDocument } from './documents.js?v=7';
 
 
 /**

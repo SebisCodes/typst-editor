@@ -8,11 +8,11 @@
  */
 
 import { createZip } from './zip.js?v=4';
-import { getDataUrlBytes } from './assets.js?v=6';
+import { getDataUrlBytes } from './assets.js?v=7';
 import { state, ui, areas, PIXELS_PER_POINT, showToast } from './state.js?v=3';
-import { getCurrentPage } from './zoom.js?v=6';
+import { getCurrentPage } from './zoom.js?v=7';
 import { getCompileView, getViewTitle, getTemplateCompileView } from './preview-views.js?v=1';
-import { createPageSet } from './pages.js?v=6';
+import { createPageSet } from './pages.js?v=7';
 
 /** The quality of JPG and WebP pictures. */
 const PICTURE_QUALITY = 0.92;

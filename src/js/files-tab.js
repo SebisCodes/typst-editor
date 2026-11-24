@@ -8,15 +8,15 @@
 import { escapeHtml } from './typst.js?v=8';
 import { findFileReferences } from './typst-code.js?v=3';
 import { formatString } from './typst-rules.js?v=3';
-import { assets, getDataUrlBytes } from './assets.js?v=6';
+import { assets, getDataUrlBytes } from './assets.js?v=7';
 import { openConfirmation } from './dialogs.js?v=5';
 import { saveFile } from './util.js?v=3';
 import { state, ui, areas, NARROW_SCREEN } from './state.js?v=3';
-import { showCodePosition } from './code-view.js?v=6';
-import { startCompile } from './compile.js?v=6';
-import { addSnippet } from './code-insert.js?v=6';
-import { getExtension, getFileKind, isReferenceTo, getInsertCode, addDocumentFile, renameDocumentFile } from './document-files.js?v=6';
-import { showPane } from './layout.js?v=6';
+import { showCodePosition } from './code-view.js?v=7';
+import { startCompile } from './compile.js?v=7';
+import { addSnippet } from './code-insert.js?v=7';
+import { getExtension, getFileKind, isReferenceTo, getInsertCode, addDocumentFile, renameDocumentFile } from './document-files.js?v=7';
+import { showPane } from './layout.js?v=7';
 import { hasTemplatePlaceholder } from './template-tags.js?v=2';
 import { TEMPLATE_SYNTAX } from './typst-template.js?v=1';
 

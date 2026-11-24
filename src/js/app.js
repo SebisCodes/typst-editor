@@ -22,43 +22,43 @@
  *   6. offer the test hook window.typstEditor.
  */
 
-import { createI18n } from './i18n.js?v=26';
+import { createI18n } from './i18n.js?v=27';
 import { createWrap } from './wrap.js?v=5';
 import { createAiStatus } from './aistatus.js?v=9';
-import { createSync, VIEWER } from './sync.js?v=24';
+import { createSync, VIEWER } from './sync.js?v=25';
 import './export-menu.js?v=6';
 import { startConvert } from './convert-to.js?v=15';
 import { START } from './samples.js?v=3';
-import { store } from './files.js?v=10';
-import { assets } from './assets.js?v=6';
+import { store } from './files.js?v=11';
+import { assets } from './assets.js?v=7';
 import { createAi } from './ai.js?v=10';
 import { createMcp } from './mcp.js?v=4';
 import { state, ui, areas, PREFIX, showToast } from './state.js?v=3';
-import { getSettings, startStorageSync } from './storage.js?v=6';
-import { renderCode, moveCodeLayers, showCodePosition, startCursorLine, startCodeView } from './code-view.js?v=6';
-import { setCode, addHistoryStep, undo, redo } from './history.js?v=6';
-import { startCompilerWorker, startCompile, waitForCompile } from './compile.js?v=6';
-import { startSourceMark } from './source-mark.js?v=6';
-import { startTextEditing } from './text-edit.js?v=6';
-import { startPictureMove, startPictureRemoving } from './picture-move.js?v=6';
-import { setZoom, showPage, startZoom } from './zoom.js?v=6';
-import { startProblems } from './problems.js?v=6';
-import { startToolbar } from './code-insert.js?v=6';
-import { startTyping } from './typing.js?v=6';
-import { renderInsertPanel, startInsertPanel } from './insert-panel.js?v=6';
-import { startFilesTab } from './files-tab.js?v=6';
-import { renderSettingsPanel, startSettingsPanel } from './settings-panel.js?v=6';
-import { renderOutline, startOutline } from './outline.js?v=6';
-import { showFileName, openDocument, createDocumentsDialog, startDocumentButtons } from './documents.js?v=6';
-import { showOpenPicker, startOpenButton, startFileImport } from './file-import.js?v=6';
-import { startKeyboard } from './keyboard.js?v=6';
-import { showSplit, startLayout, startDialogs } from './layout.js?v=6';
-import { startExportDialog } from './export-dialog.js?v=6';
-import { exportPdf, getPageSvg, drawPageCanvas, showPrintDialog, getPagePictures } from './export.js?v=6';
-import { startTemplateControls, updateTemplateView } from './template-panel.js?v=3';
+import { getSettings, startStorageSync } from './storage.js?v=7';
+import { renderCode, moveCodeLayers, showCodePosition, startCursorLine, startCodeView } from './code-view.js?v=7';
+import { setCode, addHistoryStep, undo, redo } from './history.js?v=7';
+import { startCompilerWorker, startCompile, waitForCompile } from './compile.js?v=7';
+import { startSourceMark } from './source-mark.js?v=7';
+import { startTextEditing } from './text-edit.js?v=7';
+import { startPictureMove, startPictureRemoving } from './picture-move.js?v=7';
+import { setZoom, showPage, startZoom } from './zoom.js?v=7';
+import { startProblems } from './problems.js?v=7';
+import { startToolbar } from './code-insert.js?v=7';
+import { startTyping } from './typing.js?v=7';
+import { renderInsertPanel, startInsertPanel } from './insert-panel.js?v=7';
+import { startFilesTab } from './files-tab.js?v=7';
+import { renderSettingsPanel, startSettingsPanel } from './settings-panel.js?v=7';
+import { renderOutline, startOutline } from './outline.js?v=7';
+import { showFileName, openDocument, createDocumentsDialog, startDocumentButtons } from './documents.js?v=7';
+import { showOpenPicker, startOpenButton, startFileImport } from './file-import.js?v=7';
+import { startKeyboard } from './keyboard.js?v=7';
+import { showSplit, startLayout, startDialogs } from './layout.js?v=7';
+import { startExportDialog } from './export-dialog.js?v=7';
+import { exportPdf, getPageSvg, drawPageCanvas, showPrintDialog, getPagePictures } from './export.js?v=7';
+import { startTemplateControls, updateTemplateView } from './template-panel.js?v=4';
 import { createTemplateExamples } from './template-examples.js?v=2';
-import { receiveDocument, importExternalDocument } from './incoming.js?v=6';
-import { getPromptState, getProblemList, getOutlineList, getFileList, openFileByName, createFile, addCode, updateText, showLine } from './agent-api.js?v=6';
+import { receiveDocument, importExternalDocument, addPageAssets } from './incoming.js?v=7';
+import { getPromptState, getProblemList, getOutlineList, getFileList, openFileByName, createFile, addCode, updateText, showLine } from './agent-api.js?v=7';
 
 /** How often a picture that could not be stored is reported, at most, in milliseconds. */
 const NOT_STORED_INTERVAL = 60000;
@@ -254,6 +254,7 @@ function createSyncEditor() {
         prefix: PREFIX, editor: 'typst', word: 'document', files: true,
         current: () => ({ id: state.fileId, name: state.name, content: state.code, assets: state.assets }),
         load: importExternalDocument,
+        addAssets: addPageAssets,
         toast: showToast,
         hookFor: id => store.getEntry(id)?.hook || null,
         setHookFor: (id, hook) => { try { store.setEntryFields(id, { hook }); } catch (e) { showToast('The browser storage is full'); } },

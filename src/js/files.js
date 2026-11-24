@@ -14,7 +14,7 @@
  * test calls store.code() through window.typstEditor; these four names stay.
  */
 
-import { assets } from './assets.js?v=6';
+import { assets } from './assets.js?v=7';
 
 /** The localStorage key of the list; the dialog follows its changes from other tabs. */
 export const LIST = 'typsteditor.files';

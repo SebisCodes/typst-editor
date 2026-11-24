@@ -7,8 +7,8 @@
  * 100 MB unpacked in all (a small ZIP can unpack to gigabytes).
  */
 
-import { ACCEPTED_FILES, FILE_TYPES, getExtension } from './document-files.js?v=6';
-import { readAsDataUrl } from './assets.js?v=6';
+import { ACCEPTED_FILES, FILE_TYPES, getExtension } from './document-files.js?v=7';
+import { readAsDataUrl } from './assets.js?v=7';
 
 const MEGABYTE = 1024 * 1024;
 /** The largest ZIP file read, and the most it may unpack to, in bytes. */

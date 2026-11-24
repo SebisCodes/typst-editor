@@ -1,6 +1,7 @@
 /**
- * Pictures moved on the page, in the code: the code of each picture (what moves) and the code
- * after a move to a place between blocks, beside another picture, or a swap of two cells.
+ * Pictures moved or removed on the page, in the code: the code of each picture (what moves) and
+ * the code after a move to a place between blocks, beside another picture, or a swap of two
+ * cells, or without the picture.
  */
 
 import { getBlankedCode, getClosingBracket, getHashEnd, STATEMENTS } from './typst-code.js?v=3';
@@ -194,6 +195,18 @@ function getCut(code, picture, inList = false) {
     const left = code.slice(0, x);
     if (x === lineStart && (!left || /\n[ \t]*\n$/.test(left))) y += /^[ \t]*\n/.exec(code.slice(y))?.[0].length || 0;
     return { x, y, repl: '' };
+}
+
+/**
+ * Returns the code without a picture: what leaves the code when it goes elsewhere goes; a cell
+ * of #grid, #table or #stack stays as an empty cell.
+ * @param {string} code - the Typst code.
+ * @param {PictureCode} picture - the picture.
+ * @returns {{code: string, at: number}} the code and where the picture stood.
+ */
+export function getPictureRemoved(code, picture) {
+    const { x, y, repl } = getCut(code, picture);
+    return { code: code.slice(0, x) + repl + code.slice(y), at: x };
 }
 
 /**

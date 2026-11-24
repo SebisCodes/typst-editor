@@ -19,8 +19,10 @@ with `template` (placeholders, examples, one example picture):
     text stays editable;
   - the "Placeholders" box is closed at the start, opens over the code without moving it, and puts a
     section around the selection as one undo step;
-  - the side panel is a drawer, closed at the start, below the bar of the pages, its button in its
-    place; up to 860 px it is the view "Edit";
+  - the side panel is closed at the start; open, it is a column at the right that narrows the
+    pages and the code in the proportion of the split while the top bar and its button keep
+    their place; up to 860 px it is the view
+    "Edit";
   - "typsteditor:template" from a window other than the page is ignored, a later message replaces
     the list, clear ends it;
   - nothing at an address that holds a placeholder is requested; without ?template= none of the
@@ -59,7 +61,7 @@ Ship to {{street}} in {{city}}.
 
 Plain words here.
 """
-DRAWER_WIDTHS = [1440, 1280, 1100, 900]
+COLUMN_WIDTHS = [1440, 1280, 1100, 900]
 NARROW_WIDTHS = [860, 390, 320]
 BAR_CONTROLS = ['#view-switch', '.pages-group', '#btn-panel']
 READ_BAR = """selectors => {
@@ -72,6 +74,15 @@ READ_BAR = """selectors => {
         bar: getBox(document.querySelector('.draw-pane > .pane-header')),
         stage: getBox(document.querySelector('#stage')),
         panel: getBox(document.querySelector('#side-panel')),
+        code: getBox(document.querySelector('.code-pane')),
+        main: getBox(document.querySelector('.draw-pane')),
+        work: getBox(document.querySelector('#work')),
+        header: getBox(document.querySelector('.header')),
+        tabsFit: [...document.querySelectorAll('#side-panel [data-itab]')].every(tab => !tab.offsetWidth || tab.scrollWidth <= tab.clientWidth),
+        tabsClear: [...document.querySelectorAll('#side-panel [data-itab]')].every(tab => { const a = tab.getBoundingClientRect(), b = document.querySelector('#btn-panel').getBoundingClientRect(); return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom; }),
+        tabCount: [...document.querySelectorAll('#side-panel [data-itab]')].filter(tab => tab.offsetWidth).length,
+        tabRows: (tabs => tabs.length >= 4 ? new Set(tabs.map(tab => Math.round(tab.getBoundingClientRect().top))).size : 1)([...document.querySelectorAll('#side-panel [data-itab]')].filter(tab => tab.offsetWidth)),
+        tabsFree: [...document.querySelectorAll('#side-panel [data-itab]')].every(isFree),
         lang: document.documentElement.lang,
     };
 }"""
@@ -347,7 +358,8 @@ def check_box(page, frame):
 
 
 def check_panel(frame):
-    """Checks that the side panel is closed at the start and its button keeps its place.
+    """Checks that the side panel is closed at the start, that opening it narrows the pages and
+    that its button keeps its place.
 
     Args:
         frame (Frame): the editor's frame.
@@ -358,11 +370,12 @@ def check_panel(frame):
     shown = frame.evaluate("() => getComputedStyle(document.querySelector('#side-panel')).display")
     button = frame.locator('#btn-panel')
     place = button.bounding_box()
-    preview_box = frame.locator('.draw-pane').bounding_box()
+    closed = frame.evaluate(READ_BAR, BAR_CONTROLS)
     button.click()
+    frame.page.wait_for_timeout(300)
     opened = frame.evaluate("() => getComputedStyle(document.querySelector('#side-panel')).display")
     check_that(shown == 'none' and opened != 'none', f'the side panel is closed at the start and opens ({shown} -> {opened})')
-    check_that(button.bounding_box() == place and frame.locator('.draw-pane').bounding_box() == preview_box, 'the panel opens over the pages, its button stays in its place')
+    check_that(button.bounding_box() == place and is_main_view_narrowed(closed, frame.evaluate(READ_BAR, BAR_CONTROLS)), 'the open panel narrows the pages, its button stays in its place')
     button.click()
 
 
@@ -390,8 +403,30 @@ def check_messages(page, frame):
     check_that('Jane Roe' not in text and '[name]' in text, 'clear ends the examples; the tags of the document stay as their names in brackets')
 
 
-def check_drawer_layout(browser):
-    """Checks the drawer at desktop widths in English and German, and the view "Edit" on narrow screens.
+def is_main_view_narrowed(closed, opened):
+    """Tells whether the open side panel is a column at the right edge of the work area and the code
+    and the pages share the rest of the width in the proportion they had with the panel closed.
+
+    Args:
+        closed (dict): the boxes read by READ_BAR with the panel closed.
+        opened (dict): the boxes read by READ_BAR with the panel open.
+
+    Returns:
+        bool: True when the boxes fit the side column.
+    """
+    work_x, _, work_width, _ = opened['work']
+    panel_x, _, panel_width, _ = opened['panel']
+    share = closed['code'][2] / (closed['code'][2] + closed['main'][2])
+    rest = opened['code'][2] + opened['main'][2]
+    return (abs(panel_x + panel_width - (work_x + work_width)) <= 1
+            and abs(opened['main'][0] + opened['main'][2] - panel_x) <= 1
+            and abs(rest - (work_width - 6 - panel_width)) <= 2
+            and abs(opened['code'][2] - share * rest) <= 2)
+
+
+def check_side_column_layout(browser):
+    """Checks the side panel's column at desktop widths and the view "Edit" on narrow screens, in
+    English and German.
 
     Args:
         browser (Browser): the browser.
@@ -400,35 +435,79 @@ def check_drawer_layout(browser):
         None: the results are printed.
     """
     for lang in ('en', 'de'):
-        for width in DRAWER_WIDTHS + NARROW_WIDTHS:
+        for width in COLUMN_WIDTHS + NARROW_WIDTHS:
             context = browser.new_context(viewport={'width': width, 'height': 900})
             page = context.new_page()
             page.goto(f'{EDITOR}?template=mustache&lang={lang}')
             page.wait_for_timeout(1500)
-            label = f'{lang} {width} px'
-            if width in NARROW_WIDTHS:
-                preview = page.evaluate(READ_BAR, BAR_CONTROLS[:-1])
-                check_that(not page.locator('#btn-panel').is_visible() and preview['free'][0], f'{label}: no drawer button, the view switch in the bar of the pages')
-                page.locator('[data-pane="properties"]').click()
-                page.wait_for_timeout(300)
-                panel = page.evaluate("() => { const style = getComputedStyle(document.querySelector('#side-panel')); return [style.display, style.position]; }")
-                check_that(panel[0] == 'flex' and panel[1] != 'absolute', f'{label}: the side panel is the view "Edit" in the flow of the page {panel}')
-                context.close()
-                continue
-            closed = page.evaluate(READ_BAR, BAR_CONTROLS)
-            page.locator('#btn-panel').click()
-            page.wait_for_timeout(300)
-            opened = page.evaluate(READ_BAR, BAR_CONTROLS)
-            check_that(closed['lang'] == lang, f'{label}: the interface is in {lang}')
-            check_that(all(opened['free']), f'{label}: every control of the bar stays uncovered while the drawer is open {dict(zip(BAR_CONTROLS, opened["free"]))}')
-            check_that(opened['boxes'] == closed['boxes'] and opened['bar'] == closed['bar'] and opened['stage'] == closed['stage'], f'{label}: opening the drawer moves nothing')
-            check_that(abs(opened['panel'][1] - (opened['bar'][1] + opened['bar'][3])) <= 1, f'{label}: the drawer starts below the bar {opened["panel"]} {opened["bar"]}')
-            zoom_free = page.evaluate("() => { const zoom = document.querySelector('.stage .zoom').getBoundingClientRect(); const hit = document.elementFromPoint(zoom.x + zoom.width - 4, zoom.y + zoom.height / 2); return Boolean(hit && hit.closest('.zoom')); }")
-            check_that(zoom_free, f'{label}: the zoom bar stays uncovered')
-            page.locator('#btn-panel').click()
-            page.wait_for_timeout(300)
-            check_that(page.evaluate(READ_BAR, BAR_CONTROLS)['boxes'] == closed['boxes'], f'{label}: closing the drawer moves nothing')
+            if width in COLUMN_WIDTHS:
+                check_side_column_at_width(page, lang, width)
+            else:
+                check_panel_view_at_width(page, lang, width)
             context.close()
+
+
+def check_side_column_at_width(page, lang, width):
+    """Checks the open side column at one desktop width: closed at the start, 290 px wide at
+    the right edge, the code and the pages sharing the rest by the split, the top bar
+    and the button in place and size, every tab label inside its tab, the bar's controls and the panel's tabs uncovered, the zoom bar uncovered, the view
+    switch usable, and every box back in place once it closes.
+
+    Args:
+        page (Page): the editor's page.
+        lang (str): the interface language.
+        width (int): the width of the window in pixels.
+
+    Returns:
+        None: the results are printed.
+    """
+    label = f'{lang} {width} px'
+    closed = page.evaluate(READ_BAR, BAR_CONTROLS)
+    check_that(closed['lang'] == lang, f'{label}: the interface is in {lang}')
+    check_that(closed['panel'][2] == 0 and page.locator('#btn-panel').get_attribute('aria-expanded') == 'false', f'{label}: the side panel is closed at the start')
+    page.locator('#btn-panel').click()
+    page.wait_for_timeout(300)
+    opened = page.evaluate(READ_BAR, BAR_CONTROLS)
+    column_width = 290
+    check_that(opened['panel'][2] == column_width, f'{label}: the open side panel is {column_width} px wide ({opened["panel"]})')
+    check_that(is_main_view_narrowed(closed, opened), f'{label}: the side panel is a column at the right that narrows the pages and the code by the split {opened["code"]} {opened["main"]} {opened["panel"]}')
+    check_that(opened['boxes'][-1] == closed['boxes'][-1] and opened['header'] == closed['header'], f'{label}: the button and the top bar keep their place and size')
+    check_that(opened['tabsFit'] and opened['tabsClear'], f'{label}: every tab label of the side panel fits its tab, clear of the button')
+    check_that(opened['tabRows'] in (1, 2) and (opened['tabRows'] == 2) == (opened['tabCount'] >= 4), f'{label}: four tabs stand in two rows of two ({opened["tabRows"]} rows)')
+    check_that(all(opened['free']) and opened['tabsFree'], f'{label}: the bar\'s controls and the panel\'s tabs stay uncovered while the panel is open {opened["free"]} tabs {opened["tabsFree"]}')
+    zoom_free = page.evaluate("() => { const zoom = document.querySelector('.stage .zoom').getBoundingClientRect(); const hit = document.elementFromPoint(zoom.x + zoom.width - 4, zoom.y + zoom.height / 2); return Boolean(hit && hit.closest('.zoom')); }")
+    check_that(zoom_free, f'{label}: the zoom bar stays uncovered')
+    page.locator('[data-view-set="template"]').click()
+    page.wait_for_timeout(300)
+    switched = page.locator('[data-view-set="template"]').get_attribute('aria-checked') == 'true'
+    page.locator('[data-view-set="example"]').click()
+    page.wait_for_timeout(300)
+    check_that(switched and page.locator('#btn-panel').get_attribute('aria-expanded') == 'true', f'{label}: the view switch works while the panel is open')
+    page.locator('#btn-panel').click()
+    page.wait_for_timeout(300)
+    again = page.evaluate(READ_BAR, BAR_CONTROLS)
+    check_that(again['boxes'] == closed['boxes'] and again['main'] == closed['main'] and again['code'] == closed['code'], f'{label}: closing the panel gives the pages their width back')
+
+
+def check_panel_view_at_width(page, lang, width):
+    """Checks a narrow screen: the side panel's button hidden, the view switch in the bar of the pages, and
+    the side panel is the view "Edit" in the flow of the page.
+
+    Args:
+        page (Page): the editor's page.
+        lang (str): the interface language.
+        width (int): the width of the window in pixels.
+
+    Returns:
+        None: the results are printed.
+    """
+    label = f'{lang} {width} px'
+    preview = page.evaluate(READ_BAR, BAR_CONTROLS[:-1])
+    check_that(not page.locator('#btn-panel').is_visible() and preview['free'][0], f'{label}: the side panel\'s button hidden, the view switch in the bar of the pages')
+    page.locator('[data-pane="properties"]').click()
+    page.wait_for_timeout(300)
+    panel = page.evaluate("() => { const style = getComputedStyle(document.querySelector('#side-panel')); return [style.display, style.position]; }")
+    check_that(panel[0] == 'flex' and panel[1] != 'absolute', f'{label}: the side panel is the view "Edit" in the flow of the page {panel}')
 
 
 def run_checks(browser, folder):
@@ -487,7 +566,7 @@ def main():
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(executable_path=os.environ.get('CHROME', '/usr/bin/google-chrome'), headless=True)
                 run_checks(browser, folder)
-                check_drawer_layout(browser)
+                check_side_column_layout(browser)
                 browser.close()
         finally:
             server.terminate()

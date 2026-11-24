@@ -33,10 +33,8 @@ your documents stay there unless you send them somewhere yourself.
 ## Side panel
 
 The side panel holds the document settings, Insert, Pictures and the Outline. The button at the top
-right of the work area opens it over the pages, below the bar of the pages, and closes it again
-(Escape too); it is closed when the editor opens. The bar's controls (the view switch and the page
-buttons) and the zoom bar stay in view and usable while it is open. On a phone it is the view
-**Edit**.
+right of the work area opens it as a column right of the pages, which get narrower, and closes it again; it
+is closed when the editor opens. On a phone it is the view **Edit**.
 
 ## Templates with placeholders
 
@@ -88,7 +86,9 @@ to it: pictures (PNG, JPG, GIF, WebP, SVG, PDF) for `image("name")`, data files 
 YAML, TOML, XML, TXT, CBOR) for `csv("name")` and the like, `.bib` files for
 `bibliography("name")`, other `.typ` files for `#import "name.typ"`, and fonts (`.otf`,
 `.ttf`) for `#set text(font: …)`. Add them by drag and drop, by paste or in the **Pictures**
-tab; you can also drag a picture on the pages to move it in the code.
+tab; you can also drag a picture on the pages to move it in the code. A click on a picture
+there shows an X at its top right corner: the X, or **Delete**, takes the picture out of the
+code in one Undo step, and its file stays in the **Pictures** tab.
 
 ## Export
 

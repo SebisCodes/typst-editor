@@ -9,9 +9,9 @@
  */
 
 import { ui } from './state.js?v=3';
-import { undo, redo } from './history.js?v=5';
-import { showSourceMark } from './source-mark.js?v=5';
-import { addMarkup } from './code-insert.js?v=5';
+import { undo, redo } from './history.js?v=6';
+import { showSourceMark } from './source-mark.js?v=6';
+import { addMarkup } from './code-insert.js?v=6';
 
 const INDENT = '  ';
 /** The shortcuts with Ctrl (Cmd) that put markup around the selection. */

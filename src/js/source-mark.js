@@ -6,10 +6,11 @@
 
 import { state, ui, NARROW_SCREEN, isCompiled } from './state.js?v=3';
 import { getRunAtPlace, getRunOfElement, getElementPlace, getTextBox } from './text-runs.js?v=4';
-import { showCodePosition } from './code-view.js?v=5';
-import { updatePageLabel, VIEW_LINE_DIVISOR } from './zoom.js?v=5';
-import { isTextEditing, isTextEditPending } from './text-edit.js?v=5';
-import { showPane } from './layout.js?v=5';
+import { showCodePosition } from './code-view.js?v=6';
+import { updatePageLabel, VIEW_LINE_DIVISOR } from './zoom.js?v=6';
+import { isTextEditing, isTextEditPending } from './text-edit.js?v=6';
+import { showPane } from './layout.js?v=6';
+import { handlePictureClick } from './picture-remove.js?v=1';
 
 /** The frame is not shown when the cursor is this far past the end of the run before it. */
 const MAX_MARK_DISTANCE = 400;
@@ -65,13 +66,15 @@ export function hideSourceMark() {
 }
 
 /**
- * Puts the code's cursor at the clicked text or element (a click handler); text that can be
- * edited on the page, a selection and the field of an edit are left alone.
+ * Puts the code's cursor at the clicked text or element (a click handler); a click on a picture
+ * selects it (picture-remove.js); text that can be edited on the page, a selection and the
+ * field of an edit are left alone.
  * @param {MouseEvent} event - the click on the pages.
  * @returns {void}
  */
 function showCodeOnClick(event) {
     if (event.target.closest('.text-in-place') || isTextEditPending() || isTextEditing()) return;
+    if (handlePictureClick(event)) return;
     const selection = getSelection();
     if (selection && !selection.isCollapsed && ui.pages.contains(selection.anchorNode)) return;
     const group = event.target.closest('.typst-text');

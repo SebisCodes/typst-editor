@@ -8,17 +8,22 @@
  *
  * A click without moving stays a click; Escape cancels; the move is one undo step. Mouse and pen
  * drag after 4 px; a finger after resting on the picture a moment (a swipe that starts on it
- * scrolls the page, a tap stays a click).
+ * scrolls the page, a tap stays a click). A click selects a picture; its X or the Delete key
+ * removes its code (picture-remove.js).
  */
 
-import { findPictures, getPictureMovedTo, getPictureMovedBeside, getPicturesSwapped } from './typst-pictures.js?v=3';
+import { findPictures, getPictureMovedTo, getPictureMovedBeside, getPicturesSwapped, getPictureRemoved } from './typst-pictures.js?v=4';
 import { state, ui, NARROW_SCREEN, showToast, getNumberInRange, isCompiled } from './state.js?v=3';
-import { getPictureElements, getPictureCode, getPicturePlaces, getDropPlaces, getDropTarget } from './picture-places.js?v=4';
-import { setCode, addTypingStep } from './history.js?v=5';
-import { showCodePosition } from './code-view.js?v=5';
-import { isTextEditing } from './text-edit.js?v=5';
-import { showPane } from './layout.js?v=5';
+import { getPictureElements, getPictureCode, getPicturePlaces, getDropPlaces, getDropTarget } from './picture-places.js?v=5';
+import { setCode, addTypingStep } from './history.js?v=6';
+import { showCodePosition } from './code-view.js?v=6';
+import { isTextEditing } from './text-edit.js?v=6';
+import { showPane } from './layout.js?v=6';
 import { getCopiedCodeRange } from './template-expansion.js?v=2';
+import { getElementPlace } from './text-runs.js?v=4';
+import { showSourceMark } from './source-mark.js?v=6';
+import { VIEWER } from './sync.js?v=24';
+import { startPictureRemover } from './picture-remove.js?v=1';
 
 /** How far a mouse or pen moves before the drag starts, in pixels. */
 const MOUSE_DRAG_DISTANCE = 4;
@@ -40,8 +45,9 @@ const MIN_LINE_WIDTH = 20;
 /** The line between blocks is drawn this far above its place, in pixels (half its thickness). */
 const LINE_HALF_THICKNESS = 1;
 const CHANGED_MEANWHILE = 'The code changed meanwhile - the edit was not used';
-/** Pictures that the examples repeat or leave out are moved in the template view. */
+/** Pictures that the examples repeat or leave out are moved and removed in the template view. */
 const MOVED_IN_TEMPLATE_VIEW = 'This picture moves in the template view - the examples repeat or leave out pictures here';
+const REMOVED_IN_TEMPLATE_VIEW = 'This picture is removed in the template view - the examples repeat or leave out pictures here';
 
 /**
  * A drag of a picture, from the press on.
@@ -171,9 +177,8 @@ function stopMoveOnEscape(event) {
  */
 function startMove(move) {
     const calls = findPictures(state.compiledCode || ''), elements = getPictureElements();
-    if (isCompiled() && !isPictureOrderKept(calls)) { showToast(MOVED_IN_TEMPLATE_VIEW); moving = null; return false; }
-    move.pic = isCompiled() ? getPictureCode(move.el, calls, elements) : null;
-    if (!move.pic) { if (!isCompiled()) showToast(CHANGED_MEANWHILE); moving = null; return false; }
+    move.pic = findPagePictureCode(move.el, calls, elements, MOVED_IN_TEMPLATE_VIEW);
+    if (!move.pic) { moving = null; return false; }
     move.places = getDropPlaces(calls, elements);
     move.pics = getPicturePlaces(calls, elements);
     move.dragging = true;
@@ -184,6 +189,32 @@ function startMove(move) {
     move.raf = requestAnimationFrame(moveViewAtEdge);
     showDropTarget(move.x, move.y);
     return true;
+}
+
+/**
+ * Returns the code of a picture of the pages, when the pages show the current code and their
+ * pictures stand for the code's pictures one by one; else shows why the picture stays.
+ * @param {Element} element - the picture's element.
+ * @param {import('./typst-pictures.js').PictureCode[]} calls - the pictures of the code.
+ * @param {Element[]} elements - the pictures on the pages.
+ * @param {string} templateViewText - the message for a picture that the template view repeats or leaves out.
+ * @returns {import('./typst-pictures.js').PictureCode|null} its code, null when it stays.
+ */
+function findPagePictureCode(element, calls, elements, templateViewText) {
+    const current = isPagesCurrent();
+    if (current && !isPictureOrderKept(calls)) { showToast(templateViewText); return null; }
+    const picture = current ? getPictureCode(element, calls, elements) : null;
+    if (!picture && !current) showToast(CHANGED_MEANWHILE);
+    return picture;
+}
+
+/**
+ * Tells whether the pages show the current code: it is compiled, and the pages come from that
+ * compile (a compile without pages keeps the earlier ones, marked as stale).
+ * @returns {boolean} true when the pages show the current code.
+ */
+function isPagesCurrent() {
+    return isCompiled() && !ui.stage.classList.contains('stale');
 }
 
 /**
@@ -253,4 +284,59 @@ export function startPictureMove() {
     }, true);
     ui.pages.addEventListener('pointercancel', () => { stopMove(false); afterMove = false; });
     ui.pages.addEventListener('click', event => { if (afterMove) { afterMove = false; event.stopImmediatePropagation(); } }, true);
+}
+
+/**
+ * Finds the picture of the pages that a clicked element belongs to.
+ * @param {Element} target - the clicked element.
+ * @returns {Element|null} the picture, null when the element is no picture of the pages.
+ */
+function findClickedPicture(target) {
+    const picture = target.closest('image.typst-image');
+    return picture && ui.pages.contains(picture) && !isTextEditing() ? picture : null;
+}
+
+/**
+ * Leads the code to a picture's place, with the focus kept on the pages.
+ * @param {Element} picture - the picture.
+ * @param {boolean} openCode - true to show the code on a narrow screen.
+ * @returns {void}
+ */
+function showPictureCode(picture, openCode) {
+    if (openCode) showPane('code');
+    const place = getElementPlace(picture, null) ?? (isPagesCurrent() ? getPictureCode(picture, findPictures(state.compiledCode), getPictureElements())?.at : null);
+    if (place == null) return;
+    showCodePosition(place, false);
+    showSourceMark(false, true);
+}
+
+/**
+ * Removes a picture's code as one undo step, when the pages show the current code.
+ * @param {Element} picture - the picture.
+ * @returns {void}
+ */
+function removePicture(picture) {
+    const code = findPagePictureCode(picture, findPictures(state.compiledCode || ''), getPictureElements(), REMOVED_IN_TEMPLATE_VIEW);
+    if (!code) return;
+    const removed = getPictureRemoved(state.code, code);
+    addTypingStep();
+    setCode(removed.code);
+    showCodePosition(removed.at, false);
+}
+
+/**
+ * Starts the selection of pictures on the pages with their X and the Delete key.
+ * @returns {void}
+ */
+export function startPictureRemoving() {
+    startPictureRemover({
+        layer: ui.scroller,
+        findPicture: findClickedPicture,
+        getPictureBox: picture => picture.getBoundingClientRect(),
+        showPictureCode,
+        removePicture,
+        getCode: () => state.code,
+        isNarrowScreen: () => NARROW_SCREEN.matches,
+        isEnabled: () => !VIEWER,
+    });
 }

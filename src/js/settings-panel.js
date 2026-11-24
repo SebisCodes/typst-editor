@@ -9,7 +9,7 @@
 import { escapeHtml } from './typst.js?v=8';
 import { findSetRule, getSetArgument, getCodeWithArgument, formatString, getStringValue, PAPERS } from './typst-rules.js?v=3';
 import { state, ui, POINTS_PER_MILLIMETER, showToast } from './state.js?v=3';
-import { setCode } from './history.js?v=5';
+import { setCode } from './history.js?v=6';
 
 const PAPER_CHOICES = [
     ['a4', 'A4 (210 × 297 mm)'], ['a5', 'A5 (148 × 210 mm)'], ['a3', 'A3 (297 × 420 mm)'], ['us-letter', 'US Letter'], ['us-legal', 'US Legal'],

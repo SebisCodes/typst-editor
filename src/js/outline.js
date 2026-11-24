@@ -5,10 +5,10 @@
 
 import { escapeHtml } from './typst.js?v=8';
 import { state, ui, NARROW_SCREEN } from './state.js?v=3';
-import { showCodePosition } from './code-view.js?v=5';
-import { updatePageLabel } from './zoom.js?v=5';
-import { showSourceMark } from './source-mark.js?v=5';
-import { showPane } from './layout.js?v=5';
+import { showCodePosition } from './code-view.js?v=6';
+import { updatePageLabel } from './zoom.js?v=6';
+import { showSourceMark } from './source-mark.js?v=6';
+import { showPane } from './layout.js?v=6';
 
 /** The space left above a heading scrolled into view, in pixels. */
 const HEADING_TOP_SPACE = 30;

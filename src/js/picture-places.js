@@ -8,7 +8,7 @@
  */
 
 import { getBlocks } from './typst-code.js?v=3';
-import { isPlaceableBeside } from './typst-pictures.js?v=3';
+import { isPlaceableBeside } from './typst-pictures.js?v=4';
 import { state, getElements } from './state.js?v=3';
 import { getElementPlace, getTextBox } from './text-runs.js?v=4';
 

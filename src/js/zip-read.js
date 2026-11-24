@@ -7,7 +7,7 @@
  * 100 MB unpacked in all (a small ZIP can unpack to gigabytes).
  */
 
-import { ACCEPTED_FILES, FILE_TYPES, getExtension } from './document-files.js?v=5';
+import { ACCEPTED_FILES, FILE_TYPES, getExtension } from './document-files.js?v=6';
 import { readAsDataUrl } from './assets.js?v=6';
 
 const MEGABYTE = 1024 * 1024;

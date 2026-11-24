@@ -7,11 +7,11 @@
  */
 
 import { state, ui, TYPING_FIELDS, DEFAULT_NAME, showToast } from './state.js?v=3';
-import { startCompile } from './compile.js?v=5';
-import { openNewDocument } from './documents.js?v=5';
-import { ACCEPTED_FILES, addDocumentFile } from './document-files.js?v=5';
-import { renderInsertPanel } from './insert-panel.js?v=5';
-import { readZipDocument } from './zip-read.js?v=5';
+import { startCompile } from './compile.js?v=6';
+import { openNewDocument } from './documents.js?v=6';
+import { ACCEPTED_FILES, addDocumentFile } from './document-files.js?v=6';
+import { renderInsertPanel } from './insert-panel.js?v=6';
+import { readZipDocument } from './zip-read.js?v=6';
 
 /** The largest .typ file opened as a document, in bytes. */
 const MAX_DOCUMENT_SIZE = 8 * 1024 * 1024;

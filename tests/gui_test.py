@@ -116,7 +116,7 @@ def get_run(page, text):
 
 
 def show_side_panel(page, is_open):
-    """Opens or closes the side panel's drawer (it is closed at the start and lies over the pages).
+    """Opens or closes the side panel's column (it is closed at the start and narrows the pages).
 
     Args:
         page (Page): the editor's page.

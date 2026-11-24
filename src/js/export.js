@@ -10,9 +10,9 @@
 import { createZip } from './zip.js?v=4';
 import { getDataUrlBytes } from './assets.js?v=6';
 import { state, ui, areas, PIXELS_PER_POINT, showToast } from './state.js?v=3';
-import { getCurrentPage } from './zoom.js?v=5';
+import { getCurrentPage } from './zoom.js?v=6';
 import { getCompileView, getViewTitle, getTemplateCompileView } from './preview-views.js?v=1';
-import { createPageSet } from './pages.js?v=5';
+import { createPageSet } from './pages.js?v=6';
 
 /** The quality of JPG and WebP pictures. */
 const PICTURE_QUALITY = 0.92;

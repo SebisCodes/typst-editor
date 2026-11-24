@@ -15,8 +15,8 @@
  */
 
 import { state, ui, PIXELS_PER_POINT } from './state.js?v=3';
-import { updateZoom, updatePageLabel } from './zoom.js?v=5';
-import { isTextEditing, stopTextEdit } from './text-edit.js?v=5';
+import { updateZoom, updatePageLabel } from './zoom.js?v=6';
+import { isTextEditing, stopTextEdit } from './text-edit.js?v=6';
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 /** The size of a page the renderer gives none for: A4 in points. */

@@ -7,11 +7,11 @@
 import { store } from './files.js?v=10';
 import { BLANK } from './samples.js?v=3';
 import { state, ui, AI_DOCUMENT_NAME, areas } from './state.js?v=3';
-import { setCode } from './history.js?v=5';
-import { waitForCompile } from './compile.js?v=5';
-import { getLineIndex, getLineStartPlace, showCodePosition } from './code-view.js?v=5';
-import { showSourceMark } from './source-mark.js?v=5';
-import { openDocument, openNewDocument } from './documents.js?v=5';
+import { setCode } from './history.js?v=6';
+import { waitForCompile } from './compile.js?v=6';
+import { getLineIndex, getLineStartPlace, showCodePosition } from './code-view.js?v=6';
+import { showSourceMark } from './source-mark.js?v=6';
+import { openDocument, openNewDocument } from './documents.js?v=6';
 
 
 /**

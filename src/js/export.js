@@ -2,12 +2,17 @@
  * What the pages export as: the PDF straight from the compiler (real text, selectable), each
  * page as SVG (with its glyphs, without the text layer used for selecting) or drawn on a canvas
  * (PNG, JPG, WebP on white paper), the .typ with its files as ZIP, and printing the pages.
+ * With template placeholders the .typ and the ZIP hold the template as written, and the pictures
+ * of the pages are made of the template view (compiled for them when the pages show the example
+ * view); the PDF and print follow the view the pages show, and print names it in its title.
  */
 
 import { createZip } from './zip.js?v=4';
 import { getDataUrlBytes } from './assets.js?v=6';
-import { state, ui, areas, PIXELS_PER_POINT, showToast } from './state.js?v=2';
-import { getCurrentPage } from './zoom.js?v=3';
+import { state, ui, areas, PIXELS_PER_POINT, showToast } from './state.js?v=3';
+import { getCurrentPage } from './zoom.js?v=4';
+import { getCompileView, getViewTitle, getTemplateCompileView } from './preview-views.js?v=1';
+import { createPageSet } from './pages.js?v=4';
 
 /** The quality of JPG and WebP pictures. */
 const PICTURE_QUALITY = 0.92;
@@ -20,6 +25,19 @@ const PRINT_CLEANUP_DELAY = 500;
 const PAGE_NUMBER_DIGITS = 2;
 
 /**
+ * The pages of the template view made for pictures, and what they were made of.
+ * @typedef {object} KeptPageSet
+ * @property {?string} code - the code.
+ * @property {?string} fileId - the document's id.
+ * @property {Array<[string, string]>} files - the document's files: name and data URI.
+ * @property {string} key - the key of the view.
+ * @property {?import('./pages.js').PageSet} pageSet - the pages, null before the first.
+ */
+
+/** @type {KeptPageSet} */
+let keptPageSet = { code: null, fileId: null, files: [], key: '', pageSet: null };
+
+/**
  * A file of an export.
  * @typedef {object} ExportFile
  * @property {string} name - its name.
@@ -27,31 +45,103 @@ const PAGE_NUMBER_DIGITS = 2;
  */
 
 /**
+ * Returns the pages on screen as a set of pages.
+ * @returns {{pages: HTMLElement[], sizes: Array<{w: number, h: number}>, defs: string}} the pages, their sizes and shared definitions.
+ */
+function getShownPageSet() {
+    return { pages: state.pages, sizes: state.sizes, defs: state.defs };
+}
+
+/**
+ * Tells whether the pages on screen are the pictures' pages: the code of now compiled with pages,
+ * in the template view (or without a template syntax).
+ * @returns {boolean} true when the pages on screen were made of the template view of the code of now.
+ */
+function isShownPageSetTemplate() {
+    const view = getTemplateCompileView(state.code);
+    return state.compiledCode === state.code && state.compiledViewKey === view.key && !ui.stage.classList.contains('stale');
+}
+
+/**
+ * Returns the pages the pictures are made of: the pages on screen when they show the template
+ * view of the code of now (or the code without a template syntax), else the template view
+ * compiled for the pictures, kept while the code, the files and the examples stay the same.
+ * @returns {Promise<{pages: HTMLElement[], sizes: Array<{w: number, h: number}>, defs: string}>} the pages.
+ * @throws {Error} when the document has no pages (the Promise rejects).
+ */
+export async function loadPicturePages() {
+    if (state.pagesFileId !== state.fileId || !state.pages.length) throw new Error(NO_PAGES);
+    if (isShownPageSetTemplate()) return getShownPageSet();
+    const view = getTemplateCompileView(state.code);
+    const kept = findKeptPageSet(view.key);
+    if (kept) return kept;
+    const code = state.code, fileId = state.fileId, files = Object.entries(state.assets);
+    const result = await areas.compiler.runCompile(code, state.assets, fileId, view);
+    if (!result.svg) throw new Error(NO_PAGES);
+    keptPageSet = { code, fileId, files, key: view.key, pageSet: createPageSet(result.svg, result.pages) };
+    return keptPageSet.pageSet;
+}
+
+/**
+ * Returns the kept pages of the template view when they were made of the code and files of now.
+ * @param {string} key - the key of the template view of now.
+ * @returns {?import('./pages.js').PageSet} the pages, or null.
+ */
+function findKeptPageSet(key) {
+    const kept = keptPageSet, files = Object.entries(state.assets);
+    const isSame = kept.pageSet && kept.code === state.code && kept.fileId === state.fileId && kept.key === key
+        && kept.files.length === files.length && kept.files.every(([name, dataUrl], index) => files[index][0] === name && files[index][1] === dataUrl);
+    return isSame ? kept.pageSet : null;
+}
+
+/**
+ * Returns the pages of the pictures as far as known without compiling: the pages on screen when
+ * they are the template view, else the kept template view, else the pages on screen.
+ * @returns {{pages: HTMLElement[], sizes: Array<{w: number, h: number}>, defs: string}} the pages.
+ */
+function getKnownPicturePages() {
+    if (isShownPageSetTemplate()) return getShownPageSet();
+    return findKeptPageSet(getTemplateCompileView(state.code).key) || getShownPageSet();
+}
+
+/**
+ * Returns how many pictures of the pages there are and the size of the first, as far as known
+ * without compiling.
+ * @returns {{count: number, size: ?{w: number, h: number}}} the number of pages and the first page's size in points, null without pages.
+ */
+export function getPicturePagesInfo() {
+    const pageSet = getKnownPicturePages();
+    return { count: pageSet.pages.length, size: pageSet.sizes[0] || null };
+}
+
+/**
  * Returns one page as a standalone SVG file: the shared definitions inside, without the text
  * layer used for selecting.
  * @param {number} index - the page's index.
+ * @param {{pages: HTMLElement[], sizes: Array<{w: number, h: number}>, defs: string}} [pageSet] - the pages, those on screen by default.
  * @returns {string} the SVG.
  */
-export function getPageSvg(index) {
-    const page = state.pages[index], size = state.sizes[index];
+export function getPageSvg(index, pageSet = getShownPageSet()) {
+    const page = pageSet.pages[index], size = pageSet.sizes[index];
     const group = page.querySelector('.typst-page').cloneNode(true);
     group.querySelectorAll('foreignObject').forEach(element => element.remove());
     group.querySelectorAll('.typst-text').forEach(element => element.style.removeProperty('visibility'));   // the text being edited on the page
     const inner = new XMLSerializer().serializeToString(group);
-    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size.w}pt" height="${size.h}pt" viewBox="0 0 ${size.w} ${size.h}"><style>svg { fill: none; }</style>${state.defs.replace(/<foreignObject[\s\S]*?<\/foreignObject>/g, '')}${inner}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size.w}pt" height="${size.h}pt" viewBox="0 0 ${size.w} ${size.h}"><style>svg { fill: none; }</style>${pageSet.defs.replace(/<foreignObject[\s\S]*?<\/foreignObject>/g, '')}${inner}</svg>`;
 }
 
 /**
  * Draws one page on a canvas on white paper.
  * @param {number} index - the page's index.
  * @param {number} scale - the scale, 1 for 96 dpi.
+ * @param {{pages: HTMLElement[], sizes: Array<{w: number, h: number}>, defs: string}} [pageSet] - the pages, those on screen by default.
  * @returns {Promise<HTMLCanvasElement>} the canvas.
  * @throws {Error} when the page cannot be drawn (the Promise rejects).
  */
-export function drawPageCanvas(index, scale) {
-    const size = state.sizes[index];
+export function drawPageCanvas(index, scale, pageSet = getShownPageSet()) {
+    const size = pageSet.sizes[index];
     const width = Math.round(size.w * PIXELS_PER_POINT * scale), height = Math.round(size.h * PIXELS_PER_POINT * scale);
-    const svg = getPageSvg(index).replace(/width="[^"]*pt" height="[^"]*pt"/, `width="${width}" height="${height}"`);
+    const svg = getPageSvg(index, pageSet).replace(/width="[^"]*pt" height="[^"]*pt"/, `width="${width}" height="${height}"`);
     return new Promise((resolve, reject) => {
         const image = new Image();
         const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
@@ -91,23 +181,25 @@ export function getCanvasBlob(canvas, type, quality = PICTURE_QUALITY) {
 }
 
 /**
- * Returns the pages as pictures. Only pages of the open document go out (another document's
- * stay on screen until this one compiles).
+ * Returns the pages as pictures, made of the pages loadPicturePages() gives. Only pages of the
+ * open document go out (another document's stay on screen until this one compiles).
  * @param {string} type - "svg" or the media type of a picture ("image/png", "image/jpeg", "image/webp").
- * @param {string} which - "all" for every page, else the page in view.
+ * @param {string} which - "all" for every page, else the page in view (the last one when there are fewer).
  * @param {number} scale - the scale of the pictures, 1 for 96 dpi.
  * @param {string} baseName - the file name without extension.
  * @returns {Promise<ExportFile[]>} the pictures, numbered when there are several pages.
  * @throws {Error} when the document has no pages (the Promise rejects).
  */
 export async function getPagePictures(type, which, scale, baseName) {
-    if (state.pagesFileId !== state.fileId || !state.pages.length) throw new Error(NO_PAGES);
+    const pageSet = await loadPicturePages();
+    const count = pageSet.pages.length;
+    if (!count) throw new Error(NO_PAGES);
     const extension = type === 'svg' ? 'svg' : type === 'image/jpeg' ? 'jpg' : type.split('/')[1];
-    const indexes = which === 'all' ? state.pages.map((page, index) => index) : [getCurrentPage()];
+    const indexes = which === 'all' ? pageSet.pages.map((page, index) => index) : [Math.min(getCurrentPage(), count - 1)];
     const pictures = [];
     for (const index of indexes) {
-        const name = which === 'all' && state.pages.length > 1 ? `${baseName}-${String(index + 1).padStart(PAGE_NUMBER_DIGITS, '0')}.${extension}` : `${baseName}.${extension}`;
-        pictures.push({ name, data: type === 'svg' ? getPageSvg(index) : await getCanvasBlob(await drawPageCanvas(index, scale), type) });
+        const name = which === 'all' && count > 1 ? `${baseName}-${String(index + 1).padStart(PAGE_NUMBER_DIGITS, '0')}.${extension}` : `${baseName}.${extension}`;
+        pictures.push({ name, data: type === 'svg' ? getPageSvg(index, pageSet) : await getCanvasBlob(await drawPageCanvas(index, scale, pageSet), type) });
     }
     return pictures;
 }
@@ -119,13 +211,14 @@ export async function getPagePictures(type, which, scale, baseName) {
  * @throws {Error} when the code has errors (the Promise rejects).
  */
 export async function exportPdf() {
-    const pdf = await areas.compiler.exportPdf(state.code, state.assets, state.fileId);
+    const pdf = await areas.compiler.exportPdf(state.code, state.assets, state.fileId, getCompileView(state.code));
     return { pdf, pages: state.pages.length };
 }
 
 /**
  * Prints the pages: they go into a layer of their own, with the paper size of the first page,
- * and the browser's print dialog opens.
+ * and the browser's print dialog opens; while it is open the page's title is the document's name
+ * and, with template placeholders, the view shown.
  * @returns {void}
  */
 export function showPrintDialog() {
@@ -138,11 +231,13 @@ export function showPrintDialog() {
     state.pages.forEach((page, index) => layer.append(createPrintPage(page, index)));
     document.body.append(layer);
     document.documentElement.classList.add('printing');
+    const formerTitle = document.title;
+    document.title = getViewTitle(state.name, state.compiledCode);
     /**
-     * Removes the layer once printing is done.
+     * Removes the layer and gives the page its title back once printing is done.
      * @returns {void}
      */
-    const removeLayer = () => { layer.remove(); document.documentElement.classList.remove('printing'); removeEventListener('afterprint', removeLayer); };
+    const removeLayer = () => { layer.remove(); document.title = formerTitle; document.documentElement.classList.remove('printing'); removeEventListener('afterprint', removeLayer); };
     addEventListener('afterprint', removeLayer);
     setTimeout(() => { window.print(); setTimeout(removeLayer, PRINT_CLEANUP_DELAY); }, PRINT_DELAY);
 }

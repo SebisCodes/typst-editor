@@ -5,18 +5,20 @@
  * Remove.
  */
 
-import { escapeHtml } from './typst.js?v=7';
+import { escapeHtml } from './typst.js?v=8';
 import { findFileReferences } from './typst-code.js?v=3';
 import { formatString } from './typst-rules.js?v=3';
 import { assets, getDataUrlBytes } from './assets.js?v=6';
 import { openConfirmation } from './dialogs.js?v=5';
 import { saveFile } from './util.js?v=3';
-import { state, ui, areas, NARROW_SCREEN } from './state.js?v=2';
-import { showCodePosition } from './code-view.js?v=3';
-import { startCompile } from './compile.js?v=3';
-import { addSnippet } from './code-insert.js?v=3';
-import { getExtension, getFileKind, isReferenceTo, getInsertCode, addDocumentFile, renameDocumentFile } from './document-files.js?v=3';
-import { showPane } from './layout.js?v=3';
+import { state, ui, areas, NARROW_SCREEN } from './state.js?v=3';
+import { showCodePosition } from './code-view.js?v=4';
+import { startCompile } from './compile.js?v=4';
+import { addSnippet } from './code-insert.js?v=4';
+import { getExtension, getFileKind, isReferenceTo, getInsertCode, addDocumentFile, renameDocumentFile } from './document-files.js?v=4';
+import { showPane } from './layout.js?v=4';
+import { hasTemplatePlaceholder } from './template-tags.js?v=2';
+import { TEMPLATE_SYNTAX } from './typst-template.js?v=1';
 
 const KILOBYTE = 1024;
 const MEGABYTE = 1024 * 1024;
@@ -57,6 +59,19 @@ function getBadge(name) {
 }
 
 /**
+ * Tells whether a file the code reads is missing in the document. With a template syntax a file
+ * name that holds a placeholder is filled in later and counts as there.
+ * @param {import('./typst-code.js').FileReference} reference - the file the code reads.
+ * @param {Array<[string, string]>} files - the document's files: [name, data URI].
+ * @returns {boolean} true when the file is missing.
+ */
+function isMissingReference(reference, files) {
+    if (!reference.name || /^https?:/.test(reference.name)) return false;
+    if (TEMPLATE_SYNTAX && hasTemplatePlaceholder(reference.name)) return false;
+    return !files.some(([name]) => isReferenceTo(reference.name, name));
+}
+
+/**
  * Draws the Pictures tab: the header with the count and size, the hints, the missing files and
  * a card per file; the sizes of the pictures in pixels follow once they have loaded.
  * @returns {void}
@@ -65,7 +80,7 @@ export function renderFilesTab() {
     const box = ui.pictures;
     const files = Object.entries(state.assets);
     const references = findFileReferences(state.code);
-    const missing = [...new Set(references.filter(reference => reference.name && !/^https?:/.test(reference.name) && !files.some(([name]) => isReferenceTo(reference.name, name))).map(reference => reference.name))];
+    const missing = [...new Set(references.filter(reference => isMissingReference(reference, files)).map(reference => reference.name))];
     const total = files.reduce((sum, [, dataUrl]) => sum + getDataUrlBytes(dataUrl).length, 0);
     box.innerHTML = `
         <div class="picture-header"><button type="button" class="button primary" id="pic-add">Add pictures or files…</button>

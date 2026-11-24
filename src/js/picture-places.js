@@ -9,8 +9,8 @@
 
 import { getBlocks } from './typst-code.js?v=3';
 import { isPlaceableBeside } from './typst-pictures.js?v=3';
-import { state, getElements } from './state.js?v=2';
-import { getElementPlace, getTextBox } from './text-runs.js?v=3';
+import { state, getElements } from './state.js?v=3';
+import { getElementPlace, getTextBox } from './text-runs.js?v=4';
 
 /** Over another picture, its middle from this share to 1 minus it swaps two cells. */
 const SWAP_SHARE = 0.25;

@@ -8,10 +8,10 @@
  * and assistive technology informed.
  */
 
-import { ui } from './state.js?v=2';
-import { undo, redo } from './history.js?v=3';
-import { showSourceMark } from './source-mark.js?v=3';
-import { addMarkup } from './code-insert.js?v=3';
+import { ui } from './state.js?v=3';
+import { undo, redo } from './history.js?v=4';
+import { showSourceMark } from './source-mark.js?v=4';
+import { addMarkup } from './code-insert.js?v=4';
 
 const INDENT = '  ';
 /** The shortcuts with Ctrl (Cmd) that put markup around the selection. */

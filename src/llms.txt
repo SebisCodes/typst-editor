@@ -82,10 +82,13 @@ Editor -> page (sent to the page around the editor, or to window.opener in its o
 - `typsteditor:reload` {id, unsaved} - inside your page, F5 / Ctrl+R / Cmd+R do not reload the editor; ask the user yourself (Ctrl+W cannot be caught by a page)
 - `typsteditor:pdf` {id, name, pages, pdf} or {id, error} - the answer to your `typsteditor:pdf`: pdf is a data URI of the PDF made by the Typst compiler (real, selectable text; `dpi` is not needed and ignored); a document with errors gets `error`
 - `typsteditor:key-request` {reason:"missing"} - the editor has no AI key in this session yet
+- `typsteditor:ai-click` {request, id, name} - the user pressed the AI button (only with ai.dialog:"page"); answer within 300 ms
 
 `?embed=1&save=0` hides the editor's Save button (Ctrl+S still sends `typsteditor:save`) - for pages with their own Save button.
 
 `?theme=light`, `?theme=dark` or `?theme=auto` (with or without `embed`) fixes the color theme for that page load and hides the theme switch; the user's own stored choice is not changed. Other values are ignored.
+
+`?template=mustache` (or `?template=angle`) is for pages whose server fills placeholders into the Typst code before it is compiled: `{{name}}`, `{{#name}} … {{/name}}`, `{{^name}} … {{/name}}` (with `angle`: `<<name>>`, `<<?name>> … <</?name>>`). The page sends the placeholders with examples and example pictures as `typsteditor:template` {placeholders: [{name, kind: value|image|section|list, label, description, example, image, shown, fields, rows}], assets} or as `template` in `typsteditor:load`; `{clear: true}` ends them. The pages show the document filled with the examples (each written for its place: markup escaped, a string in math and code); the switch "Template" shows the tags as text and compiles also with raw tags; the code view shows the tags as written. A value written directly in code is reported (write it as a string), a picture whose file name holds a placeholder shows a placeholder picture in the template view, and the list of problems reports a section left open, a stray end tag, an end tag in the wrong order and a tag with a sign outside the syntax. The "Placeholders" box below the code puts a tag at the cursor. Save, change, get, the webhook, the .typ and the ZIP carry the template as written, and the pictures of the pages (PNG, JPG, WebP, SVG) show the template view; the PDF and print follow the view shown. Examples and pictures stay in memory only.
 
 `?lang=de` shows the editor's interface in German (menus, buttons, dialogs, messages), `?lang=en` in English (the default). `/` leads to the browser's language, and a language picked in the menu holds for every giit.ch site. The AI prompt is always English.
 
@@ -94,7 +97,9 @@ Page -> editor (only from the page around the editor or the opener; after its fi
 - `typsteditor:get` - answered with `typsteditor:save` of your document (id and content null before the first load)
 - `typsteditor:save` - press Save
 - `typsteditor:pdf` - your document as a PDF from the Typst compiler, answered with `typsteditor:pdf`
-- `typsteditor:ai` {label?, prompt?, endpoint?, key?, base?, assets?} or {clear:true} - AI through your server
+- `typsteditor:ai` {label?, prompt?, endpoint?, key?, base?, assets?, answer?, dialog?} or {clear:true} or {decline:true, message?} - AI through your server
+- `typsteditor:ai-click` {request, handled} - the answer to ai-click: handled:true when your page shows its own AI dialog
+- `typsteditor:template` {placeholders, assets?} or {clear:true} - with ?template=, the placeholders with examples and example pictures
 
 Your document is the one your page loaded (or opened with ?src=). change, save, closing and get are only ever about it - never about other documents in the user's browser, also when the user opens them in the editor. A load replaces only a document that came from your page before (same name and origin), never the user's own; the AI settings and the hook from load apply only while your document is open. Your document is kept in memory only - it is never stored in the user's browser and is gone when the editor closes.
 
@@ -114,6 +119,8 @@ Fields left out keep their value; `{type:"typsteditor:ai", clear:true}` ends it.
     {"editor":"typst","target":"current"|"new","name":"<short name>","content":"<the complete Typst code>"}
 
 An AI that cannot send HTTP requests answers with a link instead, which the user pastes into the editor. When your server has a result, your page sends `{type:"typsteditor:load", name, content, from:"ai", target, assets?}` (assets: the pictures the AI sent - they are ADDED to your document's pictures, the others stay; only data URIs of the types above under a plain name are taken): target "current" (or none) puts it into your document (the user sees a note; Undo takes it back; it counts as not yet saved), target "new" opens a separate document that stays in the user's browser - its edits and Save never go to your page. The key stays valid in the editor for the whole session; only when it has none at "Copy prompt", the editor sends `{type:"typsteditor:key-request", reason:"missing"}`; answer with a `typsteditor:ai` message within 5 seconds.
+
+Your own parts (in `ai` of load or in `typsteditor:ai`): `answer:"<text>"` replaces the prompt's "HOW TO ANSWER" part with your text (fenced under "HOW TO ANSWER FROM THE WEBSITE <your host>"; the prompt then carries no endpoint and no key, and no key-request is sent), `answer:"none"` leaves the part out, `answer:""` gives the editor's part back (at most 4000 characters). `dialog:"page"`: a press on the AI button while your document is open sends `{type:"typsteditor:ai-click", request, id, name}` (no content) and waits 300 ms; answer `{type:"typsteditor:ai-click", request, handled:true}` with the same request and open your own dialog - `handled:false` or no answer opens the editor's dialog; `dialog:"editor"` or `clear` ends it. To decline a key-request, answer `{type:"typsteditor:ai", decline:true, message}`: the wait ends at once, the prompt asks for a link, and after copying the user sees "<your host>: <message>" as plain text on one line (at most 200 characters, in your page's language). In every prompt the document stands in a code fence longer than any run of backticks in it, below a line that marks it as data.
 
 Safety built in: key, endpoint and prompt are only taken from the page around the editor (after its first message, only from that origin), kept in memory, never stored and never sent by the editor itself - the key only goes into the prompt the user copies. The endpoint must be https on your page's own host (with or without www.) or a subdomain of it; others are refused. Keys must be 16-512 characters of A-Z a-z 0-9 . _ ~ + / = -.
 

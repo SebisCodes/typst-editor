@@ -114,6 +114,22 @@ def get_run(page, text):
     return page.locator('#pages .typst-text').filter(has=page.locator('.tsel', has_text=text))
 
 
+
+def show_side_panel(page, is_open):
+    """Opens or closes the side panel's drawer (it is closed at the start and lies over the pages).
+
+    Args:
+        page (Page): the editor's page.
+        is_open (bool): True to open it, False to close it.
+
+    Returns:
+        None: the side panel is open or closed.
+    """
+    button = page.locator('#btn-panel')
+    if button.count() and button.is_visible() and (button.get_attribute('aria-expanded') == 'true') != is_open:
+        button.click()
+
+
 with sync_playwright() as pw:
     browser = pw.chromium.launch(channel='chrome', headless=True)
     ctx = browser.new_context(viewport={'width': 1440, 'height': 900}, accept_downloads=True)
@@ -161,6 +177,7 @@ with sync_playwright() as pw:
     r = get_run(page, 'quick')
     check_that(r.count() == 1 and r.locator('.tsel').inner_text() == 'The quick brown fox jumps. It’s ', 'plain text over a line break is one run on the page')
     check_that(get_state(page, 'S.runs.filter(r => r.editable).length') >= 3, 'the runs are found in the code')
+    r.scroll_into_view_if_needed()
     box = r.bounding_box()
     page.mouse.click(box['x'] + box['width'] * 0.3, box['y'] + box['height'] / 2)
     page.wait_for_timeout(200)
@@ -221,6 +238,7 @@ with sync_playwright() as pw:
 
     # --- Document settings edit the #set rules ---
     set_code(page, '= Settings\nText.\n')
+    show_side_panel(page, True)
     page.select_option('#d-paper', 'sq')
     page.select_option('#d-font', '"New Computer Modern"')
     page.select_option('#d-lang', 'de-ch')
@@ -247,6 +265,7 @@ with sync_playwright() as pw:
     page.evaluate('typstEditor.compiled()')
     check_that(get_state(page, 'S.problems.filter(p => p.kind === "error").length') == 0, 'the inserted pieces compile')
     page.click('[data-itab=properties]')
+    show_side_panel(page, False)
 
     # --- My documents, templates ---
     for kind in ['article', 'letter', 'exercise', 'social']:
@@ -270,6 +289,7 @@ with sync_playwright() as pw:
     check_that('#image("title-picture.jpg"' in get_state(page, 'S.code') and page.locator('#pages image').count() == 1, 'the picture reaches the compiler and is on the page')
 
     # --- Pictures tab ---
+    show_side_panel(page, True)
     page.click('[data-itab=pictures]')
     check_that(page.locator('#pics-wrap .picture-card').count() == 1 and 'used 1×' in page.inner_text('#pics-wrap'), 'Pictures tab: the picture with where it is used')
     page.evaluate("() => typstEditor.setCode(typstEditor.state.code + '\\n#let d = csv(\"data.csv\")\\n')")
@@ -298,6 +318,7 @@ with sync_playwright() as pw:
     page.evaluate('typstEditor.compiled()')
     check_that('data.csv' not in get_state(page, 'Object.keys(S.assets)') and any('data.csv' in p for p in get_state(page, 'S.problems.map(p => p.msg)')), 'Remove takes the file away; the compiler reports it missing')
     page.click('[data-itab=properties]')
+    show_side_panel(page, False)
 
     # --- AI link to a new document, and a pasted terminal answer ---
     typ = '= From the AI\nText.\n'

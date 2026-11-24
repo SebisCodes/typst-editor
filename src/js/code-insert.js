@@ -6,12 +6,12 @@
  */
 
 import { findSetRule, getCodeWithArgument, formatString } from './typst-rules.js?v=3';
-import { state, ui, getElements, getLineStart } from './state.js?v=2';
-import { addHistoryStep } from './history.js?v=3';
-import { setCodeRange } from './typing.js?v=3';
-import { showSourceMark } from './source-mark.js?v=3';
-import { getFileKind } from './document-files.js?v=3';
-import { setSettingCode } from './settings-panel.js?v=3';
+import { state, ui, getElements, getLineStart } from './state.js?v=3';
+import { addHistoryStep } from './history.js?v=4';
+import { setCodeRange } from './typing.js?v=4';
+import { showSourceMark } from './source-mark.js?v=4';
+import { getFileKind } from './document-files.js?v=4';
+import { setSettingCode } from './settings-panel.js?v=4';
 
 /** The markup that goes around the selection, by kind. */
 const WRAPS = { strong: ['*', '*'], emph: ['_', '_'], underline: ['#underline[', ']'], raw: ['`', '`'], math: ['$', '$'] };

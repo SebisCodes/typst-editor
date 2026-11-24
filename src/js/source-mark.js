@@ -4,12 +4,12 @@
  * clicked text (or the code that made the clicked element) is.
  */
 
-import { state, ui, NARROW_SCREEN, isCompiled } from './state.js?v=2';
-import { getRunAtPlace, getRunOfElement, getElementPlace, getTextBox } from './text-runs.js?v=3';
-import { showCodePosition } from './code-view.js?v=3';
-import { updatePageLabel, VIEW_LINE_DIVISOR } from './zoom.js?v=3';
-import { isTextEditing, isTextEditPending } from './text-edit.js?v=3';
-import { showPane } from './layout.js?v=3';
+import { state, ui, NARROW_SCREEN, isCompiled } from './state.js?v=3';
+import { getRunAtPlace, getRunOfElement, getElementPlace, getTextBox } from './text-runs.js?v=4';
+import { showCodePosition } from './code-view.js?v=4';
+import { updatePageLabel, VIEW_LINE_DIVISOR } from './zoom.js?v=4';
+import { isTextEditing, isTextEditPending } from './text-edit.js?v=4';
+import { showPane } from './layout.js?v=4';
 
 /** The frame is not shown when the cursor is this far past the end of the run before it. */
 const MAX_MARK_DISTANCE = 400;

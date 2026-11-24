@@ -4,11 +4,11 @@
  * in the code.
  */
 
-import { escapeHtml } from './typst.js?v=7';
-import { state, ui, NARROW_SCREEN } from './state.js?v=2';
-import { showCodePosition } from './code-view.js?v=3';
-import { showSourceMark } from './source-mark.js?v=3';
-import { showPane } from './layout.js?v=3';
+import { escapeHtml } from './typst.js?v=8';
+import { state, ui, NARROW_SCREEN } from './state.js?v=3';
+import { showCodePosition } from './code-view.js?v=4';
+import { showSourceMark } from './source-mark.js?v=4';
+import { showPane } from './layout.js?v=4';
 
 /** The most problems the list shows. */
 const MAX_LISTED_PROBLEMS = 60;
@@ -38,7 +38,7 @@ export function renderProblems() {
  * @returns {string} the HTML of the item.
  */
 function formatProblem(problem, index) {
-    return `<li class="${problem.kind === 'error' ? 'err' : 'warn'}"><div class="pr-row" role="button" tabindex="0" data-prob="${index}"><span class="kind">${problem.kind === 'error' ? '✕' : '!'}</span><span class="line-number">${problem.file ? `<span data-no-i18n>${escapeHtml(problem.file)}</span> ` : ''}Line ${problem.line}, column ${problem.col}</span><span class="pr-text"><span data-no-i18n>${escapeHtml(problem.msg)}</span>${problem.hints.map(hint => `<span class="pr-hint">Hint: <span data-no-i18n>${escapeHtml(hint)}</span></span>`).join('')}</span></div></li>`;
+    return `<li class="${problem.kind === 'error' ? 'err' : 'warn'}"><div class="pr-row" role="button" tabindex="0" data-prob="${index}"><span class="kind">${problem.kind === 'error' ? '✕' : '!'}</span><span class="line-number">${problem.file ? `<span data-no-i18n>${escapeHtml(problem.file)}</span> ` : ''}Line ${problem.line}, column ${problem.col}</span><span class="pr-text">${problem.isEditorText ? `<span>${escapeHtml(problem.msg)}</span>` : `<span data-no-i18n>${escapeHtml(problem.msg)}</span>`}${problem.hints.map(hint => `<span class="pr-hint">Hint: <span data-no-i18n>${escapeHtml(hint)}</span></span>`).join('')}</span></div></li>`;
 }
 
 /**

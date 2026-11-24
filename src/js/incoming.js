@@ -14,12 +14,12 @@
 import { store } from './files.js?v=10';
 import { assets } from './assets.js?v=6';
 import { BLANK } from './samples.js?v=3';
-import { VIEWER } from './sync.js?v=23';
-import { state, ui, AI_DOCUMENT_NAME, showToast } from './state.js?v=2';
-import { setCode } from './history.js?v=3';
-import { startCompile, waitForCompile } from './compile.js?v=3';
-import { openDocument, openNewDocument } from './documents.js?v=3';
-import { renderInsertPanel } from './insert-panel.js?v=3';
+import { VIEWER } from './sync.js?v=24';
+import { state, ui, AI_DOCUMENT_NAME, showToast } from './state.js?v=3';
+import { setCode } from './history.js?v=4';
+import { startCompile, waitForCompile } from './compile.js?v=4';
+import { openDocument, openNewDocument } from './documents.js?v=4';
+import { renderInsertPanel } from './insert-panel.js?v=4';
 
 
 /**

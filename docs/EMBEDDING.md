@@ -57,6 +57,7 @@ editor hides the page text around it and shows a Save button.
 | `save=0` | Hides the editor's Save button, for pages with their own. Ctrl+S still sends `typsteditor:save`. |
 | `viewer=1` | The read-only viewer (see "Viewer"). Works alone or with `embed`, `theme`, `src` and a document in the hash. |
 | `theme=light`, `dark`, `auto` | Fixes the color theme for this page load and hides the theme switch. The visitor's own stored choice stays as it is. Other values are ignored. |
+| `template=mustache`, `angle` | For templates whose placeholders your server fills in before Typst runs: `{{name}}`, `{{#name}} … {{/name}}` and `{{^name}} … {{/name}}`, or with `angle` `<<name>>` and `<<?name>> … <</?name>>`. The pages show the document filled with your examples (`typsteditor:template`, see "Template placeholders" below), or with the switch "Template" the tags as text; the code view shows the tags as written. A value that stands directly in code (`#let total = {{total}}`) is reported: write it as a string, `"{{total}}"`. A picture whose file name holds a placeholder (`#image("{{logo}}.png")`) shows a placeholder picture in the template view. The list of problems also reports a section left open, a stray end tag, an end tag that closes an outer section while an inner one is open, and a tag with a sign outside the syntax. The setting holds for every document of this page load. |
 | `src=<URL>` | Opens a file from an https address. Your server must allow CORS for `https://typst.giit.ch`. |
 | `name=<name>` | The name of the document opened with `src`. |
 | `webhook=<URL>` | Sends the document to that address on Save (see "Webhook"). Only for this document and only while the page is open; it is never stored. At the top level the visitor is asked first; inside your page it works only together with `src`. |
@@ -98,6 +99,7 @@ Editor to page:
 | `typsteditor:closing` | `id, name, unsaved, content?` | (own window) The window closes. Always sent; `content` only when there are unsaved changes, `id` is null before the first load. |
 | `typsteditor:reload` | `id, unsaved` | F5 or Ctrl+R inside your page. The editor does not reload itself; ask the user and reload the frame if wanted. |
 | `typsteditor:key-request` | `reason: "missing"` | The editor has no AI key for this session yet (see "AI through your own server"). |
+| `typsteditor:ai-click` | `request, id, name` | The user pressed the AI button; only with `ai: { dialog: "page" }` (see "AI through your own server"). |
 | `typsteditor:pdf` | `id, name, pages, pdf` or `id, error` | The answer to your `typsteditor:pdf`: `pdf` is a data URI of the PDF made by the Typst compiler, with real, selectable text. A document with errors gets `error`. |
 
 Page to editor:
@@ -107,7 +109,9 @@ Page to editor:
 | `typsteditor:load` | `name, content, assets?, context?, hook?, ai?, from?, target?` | Opens your document. A document of the same name that came from your page before is replaced; the user's own documents never are. |
 | `typsteditor:get` |  | Asks for the current state; always answered with `typsteditor:save`, also when nothing changed (`id` and `content` are null before the first load). |
 | `typsteditor:save` |  | Presses Save. |
-| `typsteditor:ai` | `label?, prompt?, endpoint?, key?, base?, assets?` or `clear: true` | AI through your own server. |
+| `typsteditor:ai` | `label?, prompt?, endpoint?, key?, base?, assets?, answer?, dialog?` or `clear: true`, or `decline: true, message?` | AI through your own server; `decline` answers `typsteditor:key-request`. |
+| `typsteditor:ai-click` | `request, handled` | The answer to `typsteditor:ai-click`: `handled: true` when your page shows its own AI dialog. |
+| `typsteditor:template` | `placeholders, assets?` or `clear: true` | With `?template=`: your placeholders with examples and example pictures (see "Template placeholders"). |
 | `typsteditor:pdf` |  | Asks for your document as a PDF from the Typst compiler (`dpi` is not needed and ignored). |
 
 Optional fields of `typsteditor:load`:
@@ -123,6 +127,8 @@ Optional fields of `typsteditor:load`:
   which a link must never carry. `assets: false` leaves the pictures and files out of the
   request.
 - `ai: { … }`: the AI settings, the same fields as `typsteditor:ai`.
+- `template: { placeholders, assets }`: with `?template=`, the placeholders of this document with
+  examples, the same fields as `typsteditor:template`; `null` ends them, a load without it keeps them.
 - `from: "ai"` and `target: "current" | "new"`: a result of the AI (see below).
 
 ### Your document
@@ -140,6 +146,65 @@ it the editor falls back to the old copy command or shows the prompt to copy by 
 link from an AI cannot reach an editor inside another website, so in a frame the editor asks
 the user to paste the AI's whole answer instead. Open the editor in its own window if links
 should work.
+
+## Template placeholders
+
+With `?template=mustache` (or `angle`) your page can send the placeholders of the document with
+examples, as the message `typsteditor:template` or as the field `template` of `typsteditor:load`:
+
+```js
+frame.contentWindow.postMessage({
+  type: 'typsteditor:template',
+  placeholders: [
+    { name: 'name', kind: 'value', label: 'Name', example: 'John Doe' },
+    { name: 'logo', kind: 'image', label: 'Logo', image: 'logo.png' },
+    { name: 'hasNote', kind: 'section', label: 'With a note', shown: true },
+    { name: 'items', kind: 'list', label: 'Items',
+      fields: [ { name: 'label', label: 'Item' }, { name: 'quantity', label: 'Quantity' } ],
+      rows: [ { label: 'Chair', quantity: '2' }, { label: 'Table', quantity: '1' } ] },
+  ],
+  assets: { 'logo.png': 'data:image/png;base64,...' },
+}, 'https://typst.giit.ch');
+```
+
+| Field | Meaning | Limit |
+|---|---|---|
+| `name` | the tag's name: a letter or `_`, then letters, digits, `_`, `.`, `-` | 60 characters |
+| `kind` | `value` (the default), `image`, `section` (also for inverted sections), `list` | - |
+| `label`, `description` | what the "Placeholders" box shows | 80, 300 characters |
+| `example` | `value`: the example text | 2000 characters |
+| `image` | `image`: the name of an example picture in `assets` | - |
+| `shown` | `section`: example state, `true` or `false` | - |
+| `fields`, `rows` | `list`: the placeholders of one entry, and example entries (field name to text) | 50, 50 |
+| `assets` | example pictures: PNG, JPEG, GIF or WebP as base64 data addresses under plain names, still, at most 10000 pixels a side | 20 pictures, 40 MB |
+
+- The pages show the example view by default: sections by their example state (an inverted
+  section the opposite), a list once per row, pictures from `assets`. A placeholder without an
+  example shows its label in brackets (`[Name]`); a section without `shown` is shown once (an
+  inverted one hidden); a list without `rows` shows one entry with the field labels. A line that
+  holds only section tags is left out with its line break. The switch "Template" in the bar of the
+  pages shows the tags as text; the template view compiles also when a tag stands where Typst
+  expects something else.
+- Each example is written for its place: in markup with Typst's special characters escaped, in
+  math and code as a string, in a string with its escapes, in comments and raw text without what
+  would end them. In `#image("{{logo}}")` an example picture from `assets` is shown; a file name
+  filled with other text shows a placeholder picture. The compiler never loads anything from the
+  network, and links on the pages do not navigate.
+- When the examples make the code fail to compile, the pages show the template view with a note.
+- Each message replaces the list before it; `{ type: 'typsteditor:template', clear: true }` (or
+  `template: null` in a load) ends it, a load without `template` keeps it. The list belongs to your
+  document: other documents of the user show the labels in brackets.
+- Every text is shown as text; longer texts are cut. Examples and pictures stay in memory only:
+  never stored, never part of the document, never sent anywhere.
+- The "Placeholders" box at the bottom of the code lists label, tag and example; a click puts the
+  tag at the cursor (a section around the selection) as one undo step. Without a list from your
+  page it lists the tags found in the document.
+- Text that comes from an example cannot be edited on the pages; a click on it leads to its tag.
+  Copied text that reads the same as an example shown elsewhere on the pages stays read-only too.
+- Save, `change`, `get`, the webhook, the `.typ` and the ZIP are always the template as written;
+  the pictures of the pages (PNG, JPG, WebP, SVG, also in the ZIP of all formats) show the template
+  view in both views; the PDF (also `typsteditor:pdf`) and print follow the view shown. Print and
+  the Export dialog name the view.
 
 ## Webhook
 
@@ -270,6 +335,46 @@ One key per editor session: once the editor has a key it keeps it until the sess
 `clear`, and does not take a different one. Only while it has none, "Copy prompt" sends `{
 type: 'typsteditor:key-request', reason: 'missing' }`; answer with a `typsteditor:ai`
 message within 5 seconds.
+
+### Your own answer part, your own AI dialog, declining a key
+
+- `answer` (in `ai` of `load`, or in `typsteditor:ai`): your own text for the "HOW TO ANSWER" part of
+  the copied prompt, for example when your page takes the AI's answer in its own way. The
+  prompt shows it fenced under `HOW TO ANSWER FROM THE WEBSITE <your host>` and carries neither
+  the endpoint nor the key, so "Copy prompt" sends no `key-request`. `"none"` leaves the part
+  out, `""` gives the editor's own part back, `clear` ends it with the other settings. At most
+  4000 characters are kept. The AI dialog says that your site gives the answering
+  instructions and shows your text together with your prompt.
+- `dialog: "page"` (in `ai`): your page shows its own AI dialog. When the user presses the AI
+  button while your document is open, the editor sends `{ type: 'typsteditor:ai-click', request,
+  id, name }` (no content) and waits 300 ms. Answer `{ type: 'typsteditor:ai-click', request,
+  handled: true }` with the same `request` to keep the editor's dialog shut; `handled: false`
+  opens it at once, and without an answer it opens after the wait. `dialog: "editor"` or
+  `clear` ends it.
+- Declining a key: answer `typsteditor:key-request` with `{ type: 'typsteditor:ai', decline: true,
+  message }` when your server gives no key, for example when the user is not logged in. The
+  editor stops waiting at once, the prompt asks the AI for a link, and after copying the user
+  sees `<your host>: <message>` as plain text on one line (at most 200 characters). Write
+  `message` in your page's language; without it the editor shows its own note.
+
+```js
+ed.contentWindow.postMessage({ type: 'typsteditor:ai', dialog: 'page', answer: 'Reply in the chat of example.com.' }, ORIGIN);
+addEventListener('message', e => {
+  if (e.source !== ed.contentWindow || e.origin !== ORIGIN) return;
+  const m = e.data;
+  if (m.type === 'typsteditor:ai-click') {                 // the user pressed the AI button
+    openMyAiDialog();
+    ed.contentWindow.postMessage({ type: 'typsteditor:ai-click', request: m.request, handled: true }, ORIGIN);
+  }
+  if (m.type === 'typsteditor:key-request' && !loggedIn) {
+    ed.contentWindow.postMessage({ type: 'typsteditor:ai', decline: true, message: 'Please log in to use the AI.' }, ORIGIN);
+  }
+});
+```
+
+In every prompt the document stands in a code fence one backtick longer than any run of
+backticks in it, below a line that marks its text, its name and a quoted selection as data;
+your texts (`prompt`, `rules`, `answer`) stand in such fences under your real host.
 
 Key, endpoint and prompt are taken only from the page around the editor, kept in memory,
 never stored and never sent by the editor itself: the key only goes into the prompt the user

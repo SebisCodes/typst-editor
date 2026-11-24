@@ -4,17 +4,20 @@
  * pictures; Download, Copy, and one ZIP with everything. Ctrl+S saves to the server or the page
  * around the editor when that is set up, else it downloads the .typ (with its files as ZIP).
  *
- * The dialog waits for the compiler before it counts the pages and before it exports.
+ * The dialog waits for the compiler before it counts the pages and before it exports. With
+ * template placeholders the pictures of the pages show the template view and the PDF follows the
+ * view the pages show; the dialog names the view of each.
  */
 
 import { createZip } from './zip.js?v=4';
 import { openDialog } from './dialogs.js?v=5';
 import { saveFile, getSafeName } from './util.js?v=3';
-import { state, ui, areas, getElement, showToast } from './state.js?v=2';
-import { waitForCompile } from './compile.js?v=3';
-import { getPageSize, getCurrentPage } from './zoom.js?v=3';
-import { isTextEditing, stopTextEdit } from './text-edit.js?v=3';
-import { getPageSvg, drawPageCanvas, getCanvasBlob, getPagePictures, exportPdf, createTypZip, getFileEntries } from './export.js?v=3';
+import { state, ui, areas, getElement, showToast, PIXELS_PER_POINT } from './state.js?v=3';
+import { waitForCompile } from './compile.js?v=4';
+import { getPageSize } from './zoom.js?v=4';
+import { isTextEditing, stopTextEdit } from './text-edit.js?v=4';
+import { getPagePictures, exportPdf, createTypZip, getFileEntries, loadPicturePages, getPicturePagesInfo } from './export.js?v=4';
+import { getViewTitle, getTemplateViewTitle } from './preview-views.js?v=1';
 
 const PICTURE_FORMATS = /^(png|jpeg|webp|svg)$/;
 const COPY_PICTURE_FORMATS = /^(png|jpeg|webp)$/;
@@ -25,7 +28,8 @@ const dialog = getElement('#export');
 const nameField = getElement('#ex-name'), formatField = getElement('#ex-format'), pagesField = getElement('#ex-pages'), scaleField = getElement('#ex-scale'), textField = getElement('#ex-text'), infoField = getElement('#ex-info');
 
 /**
- * Opens the Export dialog with the document's name, and updates it once the code is compiled.
+ * Opens the Export dialog with the document's name, and updates it once the code is compiled and
+ * the pages of the pictures are there.
  * @returns {Promise<void>} settles when the dialog shows the compiled pages.
  */
 export async function openExportDialog() {
@@ -34,6 +38,18 @@ export async function openExportDialog() {
     openDialog(dialog);
     await waitForCompile();
     updateExportDialog();
+    try { await loadPicturePages(); } catch (e) { return; }
+    updateExportDialog();
+}
+
+/**
+ * Returns a number of pages as text.
+ * @param {number} count - the number of pages.
+ * @returns {string} e.g. "2 pages", translated.
+ */
+function formatPageCount(count) {
+    const text = `${count} ${count === 1 ? 'page' : 'pages'}`;
+    return areas.i18n?.translate(text) ?? text;
 }
 
 /**
@@ -56,16 +72,16 @@ function updateExportDialog() {
     dialog.dataset.raster = format === 'pdf' ? 'pdf' : String(isPicture);
     dialog.dataset.vector = String(format === 'svg');
     getElement('#ex-copy').hidden = format === 'pdf' || format === 'typzip';
-    const count = state.pages.length;
-    const pages = `${count} ${count === 1 ? 'page' : 'pages'}`;
     if (isPicture) {
+        const info = getPicturePagesInfo();
+        const pages = getTemplateViewTitle(formatPageCount(info.count));
         const scale = +scaleField.value;
-        const { w, h } = getPageSize();
+        const { w, h } = info.size ? { w: info.size.w * PIXELS_PER_POINT, h: info.size.h * PIXELS_PER_POINT } : getPageSize();
         getElement('#ex-size').textContent = format === 'svg' ? `${pages} as SVG (sharp at any size)` : `${Math.round(w * scale)} × ${Math.round(h * scale)} pixels per page · ${pages}`;
         infoField.textContent = '';
         return;
     }
-    if (format === 'pdf') { infoField.textContent = pages; return; }
+    if (format === 'pdf') { infoField.textContent = getViewTitle(formatPageCount(state.pages.length), state.compiledCode); return; }
     if (format === 'typzip') {
         const fileCount = Object.keys(state.assets).length;
         textField.value = [`${getExportName()}.typ`, ...Object.keys(state.assets)].join('\n');
@@ -138,18 +154,21 @@ async function exportAllAsZip() {
 }
 
 /**
- * Copies the chosen format (the dialog's Copy button): the page in view as PNG or SVG, or the
+ * Copies the chosen format (the dialog's Copy button): the picture of the page in view as PNG or SVG, or the
  * text; where the clipboard is not allowed, the .typ is copied from the field.
  * @returns {Promise<void>} settles when it is copied or the error is shown.
  */
 async function copyChosenFormat() {
     const format = formatField.value;
     try {
+        // The clipboard is written within the click; the picture follows as a promise of the item.
         if (COPY_PICTURE_FORMATS.test(format)) {
-            const canvas = await drawPageCanvas(getCurrentPage(), +scaleField.value);
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': await getCanvasBlob(canvas, 'image/png') })]);
-        } else if (format === 'svg') await navigator.clipboard.writeText(getPageSvg(getCurrentPage()));
-        else await navigator.clipboard.writeText(textField.value);
+            const picture = getPagePictures('image/png', 'current', +scaleField.value, getExportName()).then(pictures => pictures[0].data);
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': picture })]);
+        } else if (format === 'svg') {
+            const svg = getPagePictures('svg', 'current', 1, getExportName()).then(pictures => new Blob([pictures[0].data], { type: 'text/plain' }));
+            await navigator.clipboard.write([new ClipboardItem({ 'text/plain': svg })]);
+        } else await navigator.clipboard.writeText(textField.value);
         showToast(COPIED);
     } catch (err) {
         if (format === 'typ') { textField.select(); document.execCommand('copy'); showToast(COPIED); }

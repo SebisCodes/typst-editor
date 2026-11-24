@@ -50,6 +50,8 @@ let toastTimer = 0;
  * @property {number} line - its line, 1-based.
  * @property {number} col - its column, 1-based.
  * @property {string} file - the file it is in, "" for the document's own code.
+ * @property {boolean} [isEditorText] - true for a message of the editor itself (template placeholders),
+ *     which the interface language translates; the compiler's messages stay as the compiler writes them.
  */
 
 /**
@@ -72,6 +74,7 @@ let toastTimer = 0;
  * @property {number|null} start - where it starts in the code, null when it is not found.
  * @property {number|null} end - where it ends in the code.
  * @property {number[]|null} places - for each character of core (and its end) the place in the code.
+ * @property {number[]|null} viewPlaces - for each character of core (and its end) the place in the text the compiler read.
  * @property {boolean} editable - true when it can be edited on the page.
  */
 
@@ -80,8 +83,12 @@ let toastTimer = 0;
  * @typedef {object} EditorState
  * @property {string} code - the open document's code.
  * @property {string|null} compiledCode - the code the pages and problems were made from.
+ * @property {string} compiledViewKey - the key of the view the pages were made in ("" for the code as written).
+ * @property {string} viewText - the text the compiler read: the code, or with template placeholders the text of the view.
+ * @property {?Array<object>} viewMap - the map of viewText to the code (template-expansion.js), null when viewText is the code.
+ * @property {SyntaxLists} viewAst - the syntax tree's lists on viewText.
  * @property {Problem[]} problems - the compiler's problems.
- * @property {SyntaxLists} ast - the syntax tree of the compiled code.
+ * @property {SyntaxLists} ast - the syntax tree's lists at their places in the code.
  * @property {import('./typst-code.js').OutlineHeading[]} outline - the headings.
  * @property {HTMLElement[]} pages - the page elements (.sheet).
  * @property {Array<{w: number, h: number}>} sizes - the size of each page in points.
@@ -107,7 +114,8 @@ let toastTimer = 0;
 
 /** @type {EditorState} */
 export const state = {
-    code: '', compiledCode: null, problems: [], ast: { text: [], headings: [], math: [], marks: [] }, outline: [],
+    code: '', compiledCode: null, compiledViewKey: '', viewText: '', viewMap: null, viewAst: { text: [], headings: [], math: [], marks: [] },
+    problems: [], ast: { text: [], headings: [], math: [], marks: [] }, outline: [],
     pages: [], sizes: [], runs: [], sourceRuns: [], defs: '', pagesFileId: '',
     zoom: 1, fit: 'width',
     split: 0.5,

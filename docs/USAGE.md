@@ -30,6 +30,24 @@ your documents stay there unless you send them somewhere yourself.
    pieces for lists, tables, math and symbols.
 3. **Export**: save a PDF, pictures of the pages or the `.typ` file with its files.
 
+## Side panel
+
+The side panel holds the document settings, Insert, Pictures and the Outline. The button at the top
+right of the work area opens it over the pages, below the bar of the pages, and closes it again
+(Escape too); it is closed when the editor opens. The bar's controls (the view switch and the page
+buttons) and the zoom bar stay in view and usable while it is open. On a phone it is the view
+**Edit**.
+
+## Templates with placeholders
+
+A website that edits templates opens the editor with `?template=mustache` or `?template=angle`.
+The pages then show the document filled with the website's examples; **Template** in the bar of the
+pages shows the placeholders as written, **Examples** brings the examples back. A placeholder
+without an example shows its label in brackets. The **Placeholders** box below the code lists them:
+a click puts one at the cursor, a section around the selected text. Text that comes from an example
+cannot be edited on the pages. Saving, downloading the `.typ` and the ZIP keep the placeholders;
+pictures of the pages show the template view; the PDF and print follow the view shown.
+
 ## Editing on the page
 
 Click text on the page to edit it right there: a field opens with the cursor where you
@@ -108,7 +126,9 @@ document appears in your editor. **Undo** takes every change back. The links loo
 A tab opened with such a link hands the document to the editor tab you used last. You can
 also paste the AI's whole answer into the editor (Ctrl+V outside the code); links that a
 terminal broke over several lines are joined. When the editor is embedded in another
-website, links cannot reach it, so paste the answer there.
+website, links cannot reach it, so paste the answer there. A website that embeds the
+editor may give its own instructions for how the AI answers, or show its own AI dialog
+when you press the button; the dialog names the website and shows its instructions.
 
 **Browser agents (WebMCP):** in browsers that offer WebMCP, the page registers tools for AI
 agents that run in the page itself: `get_document`, `get_problems`, `list_sections`,

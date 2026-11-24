@@ -14,12 +14,12 @@
  */
 
 import { getTextStyle } from './typst-text.js?v=3';
-import { state, ui, PIXELS_PER_POINT, showToast, isCompiled } from './state.js?v=2';
-import { getRunPlaces, getRunOfElement, getCharacterIndex, getTextBox } from './text-runs.js?v=3';
-import { getEditedCode, isInStrong } from './text-breaks.js?v=3';
-import { setCode, addTypingStep } from './history.js?v=3';
-import { showCodePosition } from './code-view.js?v=3';
-import { showSourceMark } from './source-mark.js?v=3';
+import { state, ui, PIXELS_PER_POINT, showToast, isCompiled } from './state.js?v=3';
+import { isRunInView, getRunOfElement, getCharacterIndex, getTextBox } from './text-runs.js?v=4';
+import { getEditedCode, isInStrong } from './text-breaks.js?v=4';
+import { setCode, addTypingStep } from './history.js?v=4';
+import { showCodePosition } from './code-view.js?v=4';
+import { showSourceMark } from './source-mark.js?v=4';
 
 /** The fonts the pages have as web fonts (page.css); another font the code names is asked of the browser first. */
 const PAGE_FONTS = { 'libertinus serif': '"Libertinus Serif"', 'new computer modern': '"New Computer Modern"', 'dejavu sans mono': '"DejaVu Sans Mono"' };
@@ -115,7 +115,7 @@ function getRunLook(run, boxHeight) {
  */
 function startTextEdit(run, x) {
     if (editing) return;
-    if (!isCompiled() || !getRunPlaces(run.core, run.start)) { showToast(CHANGED_IN_CODE); return; }
+    if (!isCompiled() || !isRunInView(run)) { showToast(CHANGED_IN_CODE); return; }
     const index = getCharacterIndex(run, x);
     const { input, rowHeight } = createField(run);
     editing = { run, input, before: run.core };
@@ -207,7 +207,7 @@ export function stopTextEdit(keep) {
     input.remove();
     run.element.style.visibility = '';
     if (!keep || edited === before) return;
-    if (!isCompiled() || !getRunPlaces(before, run.start)) { showToast(CHANGED_MEANWHILE); return; }
+    if (!isCompiled() || !isRunInView(run, before)) { showToast(CHANGED_MEANWHILE); return; }
     const result = getEditedCode(run, before, edited);
     if (!result) return;
     addTypingStep();

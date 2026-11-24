@@ -13,8 +13,8 @@
  * Start-up steps:
  *   1. the interface language (the AI prompt stays English) and the line wrap of the code;
  *   2. start the compiler and connect the code view, the pages, the side panel, the documents,
- *      opening files, the keyboard, the layout, the Export dialog and the dialogs, in the order
- *      their listeners take events;
+ *      opening files, the keyboard, the layout, the Export dialog, the dialogs and the controls of
+ *      template placeholders, in the order their listeners take events;
  *   3. take the stored settings and open the last document (or the welcome example);
  *   4. draw everything, and compile once the document's files are read;
  *   5. start the AI Assistant, the WebMCP tools, the AI status, "Open in another editor" and
@@ -22,41 +22,43 @@
  *   6. offer the test hook window.typstEditor.
  */
 
-import { createI18n } from './i18n.js?v=23';
+import { createI18n } from './i18n.js?v=24';
 import { createWrap } from './wrap.js?v=5';
-import { createAiStatus } from './aistatus.js?v=8';
-import { createSync, VIEWER } from './sync.js?v=23';
+import { createAiStatus } from './aistatus.js?v=9';
+import { createSync, VIEWER } from './sync.js?v=24';
 import './export-menu.js?v=6';
-import { startConvert } from './convert-to.js?v=14';
+import { startConvert } from './convert-to.js?v=15';
 import { START } from './samples.js?v=3';
 import { store } from './files.js?v=10';
 import { assets } from './assets.js?v=6';
-import { createAi } from './ai.js?v=9';
+import { createAi } from './ai.js?v=10';
 import { createMcp } from './mcp.js?v=4';
-import { state, ui, areas, PREFIX, showToast } from './state.js?v=2';
-import { getSettings, startStorageSync } from './storage.js?v=3';
-import { renderCode, moveCodeLayers, showCodePosition, startCursorLine, startCodeView } from './code-view.js?v=3';
-import { setCode, addHistoryStep, undo, redo } from './history.js?v=3';
-import { startCompilerWorker, startCompile, waitForCompile } from './compile.js?v=3';
-import { startSourceMark } from './source-mark.js?v=3';
-import { startTextEditing } from './text-edit.js?v=3';
-import { startPictureMove } from './picture-move.js?v=3';
-import { setZoom, showPage, startZoom } from './zoom.js?v=3';
-import { startProblems } from './problems.js?v=3';
-import { startToolbar } from './code-insert.js?v=3';
-import { startTyping } from './typing.js?v=3';
-import { renderInsertPanel, startInsertPanel } from './insert-panel.js?v=3';
-import { startFilesTab } from './files-tab.js?v=3';
-import { renderSettingsPanel, startSettingsPanel } from './settings-panel.js?v=3';
-import { renderOutline, startOutline } from './outline.js?v=3';
-import { showFileName, openDocument, createDocumentsDialog, startDocumentButtons } from './documents.js?v=3';
-import { showOpenPicker, startOpenButton, startFileImport } from './file-import.js?v=3';
-import { startKeyboard } from './keyboard.js?v=3';
-import { showSplit, startLayout, startDialogs } from './layout.js?v=3';
-import { startExportDialog } from './export-dialog.js?v=3';
-import { exportPdf, getPageSvg, drawPageCanvas } from './export.js?v=3';
-import { receiveDocument, importExternalDocument } from './incoming.js?v=3';
-import { getPromptState, getProblemList, getOutlineList, getFileList, openFileByName, createFile, addCode, updateText, showLine } from './agent-api.js?v=3';
+import { state, ui, areas, PREFIX, showToast } from './state.js?v=3';
+import { getSettings, startStorageSync } from './storage.js?v=4';
+import { renderCode, moveCodeLayers, showCodePosition, startCursorLine, startCodeView } from './code-view.js?v=4';
+import { setCode, addHistoryStep, undo, redo } from './history.js?v=4';
+import { startCompilerWorker, startCompile, waitForCompile } from './compile.js?v=4';
+import { startSourceMark } from './source-mark.js?v=4';
+import { startTextEditing } from './text-edit.js?v=4';
+import { startPictureMove } from './picture-move.js?v=4';
+import { setZoom, showPage, startZoom } from './zoom.js?v=4';
+import { startProblems } from './problems.js?v=4';
+import { startToolbar } from './code-insert.js?v=4';
+import { startTyping } from './typing.js?v=4';
+import { renderInsertPanel, startInsertPanel } from './insert-panel.js?v=4';
+import { startFilesTab } from './files-tab.js?v=4';
+import { renderSettingsPanel, startSettingsPanel } from './settings-panel.js?v=4';
+import { renderOutline, startOutline } from './outline.js?v=4';
+import { showFileName, openDocument, createDocumentsDialog, startDocumentButtons } from './documents.js?v=4';
+import { showOpenPicker, startOpenButton, startFileImport } from './file-import.js?v=4';
+import { startKeyboard } from './keyboard.js?v=4';
+import { showSplit, startLayout, startDialogs } from './layout.js?v=4';
+import { startExportDialog } from './export-dialog.js?v=4';
+import { exportPdf, getPageSvg, drawPageCanvas, showPrintDialog, getPagePictures } from './export.js?v=4';
+import { startTemplateControls, updateTemplateView } from './template-panel.js?v=1';
+import { createTemplateExamples } from './template-examples.js?v=2';
+import { receiveDocument, importExternalDocument } from './incoming.js?v=4';
+import { getPromptState, getProblemList, getOutlineList, getFileList, openFileByName, createFile, addCode, updateText, showLine } from './agent-api.js?v=4';
 
 /** How often a picture that could not be stored is reported, at most, in milliseconds. */
 const NOT_STORED_INTERVAL = 60000;
@@ -124,6 +126,7 @@ function connectAreas() {
     startLayout();
     startExportDialog();
     startDialogs();
+    startTemplateControls();
 }
 
 /**
@@ -214,6 +217,8 @@ function startAiAndSync() {
         getRemote: () => areas.sync?.getAiSettings() || null,
         fetchKey: () => (areas.sync ? areas.sync.fetchKey() : Promise.resolve(null)),
         hasValidKey: () => !!areas.sync?.hasValidKey(),
+        handleAiClick: openEditorDialog => (areas.sync ? areas.sync.handleAiClick(openEditorDialog) : openEditorDialog()),
+        getKeyDecline: () => areas.sync?.getKeyDecline() || '',
     });
     const agent = createMcp({
         onUse: () => areas.aiStatus.addDelivery('agent'),
@@ -253,6 +258,8 @@ function createSyncEditor() {
         setHookFor: (id, hook) => { try { store.setEntryFields(id, { hook }); } catch (e) { showToast('The browser storage is full'); } },
         onAi: () => areas.ai?.updateRemote(),
         pdf: exportPdf,
+        parseTemplate: message => createTemplateExamples(message),
+        onTemplate: updateTemplateView,
     };
 }
 
@@ -263,8 +270,9 @@ function createSyncEditor() {
 function createTestHook() {
     return {
         state, store, assets, setCode, undo, redo, compiled: waitForCompile, zoomTo: setZoom, goPage: showPage, receive: receiveDocument,
-        revealInCode: showCodePosition, sync: () => areas.sync,
+        revealInCode: showCodePosition, sync: () => areas.sync, print: showPrintDialog,
         pdf: () => exportPdf().then(result => result.pdf), pageSvg: getPageSvg,
         pagePng: (index = 0, scale = TEST_PICTURE_SCALE) => drawPageCanvas(index, scale).then(canvas => canvas.toDataURL()),
+        pictureSvgs: () => getPagePictures('svg', 'all', 1, 'page').then(pictures => pictures.map(picture => picture.data)),
     };
 }

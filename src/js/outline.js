@@ -3,12 +3,12 @@
  * cursor on the heading and scrolls the pages to its text.
  */
 
-import { escapeHtml } from './typst.js?v=7';
-import { state, ui, NARROW_SCREEN } from './state.js?v=2';
-import { showCodePosition } from './code-view.js?v=3';
-import { updatePageLabel } from './zoom.js?v=3';
-import { showSourceMark } from './source-mark.js?v=3';
-import { showPane } from './layout.js?v=3';
+import { escapeHtml } from './typst.js?v=8';
+import { state, ui, NARROW_SCREEN } from './state.js?v=3';
+import { showCodePosition } from './code-view.js?v=4';
+import { updatePageLabel } from './zoom.js?v=4';
+import { showSourceMark } from './source-mark.js?v=4';
+import { showPane } from './layout.js?v=4';
 
 /** The space left above a heading scrolled into view, in pixels. */
 const HEADING_TOP_SPACE = 30;

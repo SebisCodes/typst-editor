@@ -4,16 +4,19 @@
  * once in a hidden <svg> the pages refer to.
  *
  * showPages() runs these steps:
- *   1. read the renderer's SVG without its scripts and event attributes;
+ *   1. read the renderer's SVG without its scripts and event attributes, with the addresses of
+ *      its links escaped as XML;
  *   2. move the shared definitions into one hidden <svg>;
  *   3. make an element of each page with its size;
- *   4. put them in place of the old pages, keeping the scroll, and zoom them;
- *   5. take the addresses of the links away.
+ *   4. take the addresses of the links away;
+ *   5. put them in place of the old pages, keeping the scroll, and zoom them.
+ * createPageSet() runs steps 1 to 4 for pages kept apart from the screen (the pictures of the
+ * template view, export.js).
  */
 
-import { state, ui, PIXELS_PER_POINT } from './state.js?v=2';
-import { updateZoom, updatePageLabel } from './zoom.js?v=3';
-import { isTextEditing, stopTextEdit } from './text-edit.js?v=3';
+import { state, ui, PIXELS_PER_POINT } from './state.js?v=3';
+import { updateZoom, updatePageLabel } from './zoom.js?v=4';
+import { isTextEditing, stopTextEdit } from './text-edit.js?v=4';
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 /** The size of a page the renderer gives none for: A4 in points. */
@@ -28,6 +31,15 @@ const DEFAULT_PAGE_HEIGHT = 842;
  */
 
 /**
+ * A set of pages made from one SVG of the renderer.
+ * @typedef {object} PageSet
+ * @property {SVGSVGElement} definitions - the hidden <svg> with the shared definitions.
+ * @property {HTMLDivElement[]} pages - one element per page.
+ * @property {PageSize[]} sizes - the size of each page in points.
+ * @property {string} defs - the shared definitions as SVG text.
+ */
+
+/**
  * Shows the compiled pages (the steps in the header).
  * @param {string} svgText - the renderer's SVG of all pages.
  * @param {PageSize[]} sizes - the size of each page.
@@ -35,24 +47,40 @@ const DEFAULT_PAGE_HEIGHT = 842;
  * @throws {Error} when the renderer gave no SVG.
  */
 export function showPages(svgText, sizes) {
-    const root = parseRendererSvg(svgText);
-    const children = [...root.children];
-    const pageGroups = children.filter(child => child.classList.contains('typst-page'));
-    const definitions = createDefinitions(getSharedElements(children, pageGroups));
-    state.defs = definitions.innerHTML;
-    const pages = pageGroups.map((group, index) => createPage(group, index, sizes));
+    const pageSet = createPageSet(svgText, sizes);
     if (isTextEditing()) stopTextEdit(false);
     const scrollTop = ui.scroller.scrollTop, scrollLeft = ui.scroller.scrollLeft;
-    ui.pages.replaceChildren(definitions, ...pages);
-    state.pages = pages;
+    ui.pages.replaceChildren(pageSet.definitions, ...pageSet.pages);
+    state.defs = pageSet.defs;
+    state.pages = pageSet.pages;
     state.pagesFileId = state.fileId;
-    state.sizes = pages.map((page, index) => ({ w: +(sizes[index]?.w || DEFAULT_PAGE_WIDTH), h: +(sizes[index]?.h || DEFAULT_PAGE_HEIGHT) }));
+    state.sizes = pageSet.sizes;
     updateZoom();
     ui.scroller.scrollTop = scrollTop;
     ui.scroller.scrollLeft = scrollLeft;
     updatePageLabel();
+}
+
+/**
+ * Creates the elements of the pages of a renderer's SVG (steps 1 to 4 in the header), kept
+ * apart from the pages on screen.
+ * @param {string} svgText - the renderer's SVG of all pages.
+ * @param {PageSize[]} sizes - the size of each page.
+ * @returns {PageSet} the definitions, the pages and their sizes.
+ * @throws {Error} when the renderer gave no SVG.
+ */
+export function createPageSet(svgText, sizes) {
+    const root = parseRendererSvg(svgText);
+    const children = [...root.children];
+    const pageGroups = children.filter(child => child.classList.contains('typst-page'));
+    const definitions = createDefinitions(getSharedElements(children, pageGroups));
+    const pages = pageGroups.map((group, index) => createPage(group, index, sizes));
     // Links on the pages do not navigate; a click on one goes to the code like any other text.
-    for (const link of ui.pages.querySelectorAll('a')) link.removeAttribute('href');
+    for (const element of [definitions, ...pages]) for (const link of element.querySelectorAll('a')) link.removeAttribute('href');
+    return {
+        definitions, pages, defs: definitions.innerHTML,
+        sizes: pages.map((page, index) => ({ w: +(sizes[index]?.w || DEFAULT_PAGE_WIDTH), h: +(sizes[index]?.h || DEFAULT_PAGE_HEIGHT) })),
+    };
 }
 
 /**
@@ -64,7 +92,7 @@ export function showPages(svgText, sizes) {
  * @throws {Error} when the text holds no SVG.
  */
 function parseRendererSvg(svgText) {
-    const clean = svgText.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*')/gi, '');
+    const clean = escapeLinkAddresses(svgText.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*')/gi, ''));
     const root = new DOMParser().parseFromString(clean, 'image/svg+xml').documentElement;
     if (root.nodeName !== 'svg') throw new Error('no SVG from the renderer');
     root.querySelectorAll('script').forEach(script => script.remove());
@@ -74,6 +102,16 @@ function parseRendererSvg(svgText) {
         }
     }
     return root;
+}
+
+/**
+ * Escapes < and & in the addresses of the renderer's SVG, which it writes as the document gives
+ * them (a link to "a&b" or to a template placeholder such as <<link>>), so the SVG reads as XML.
+ * @param {string} svgText - the renderer's SVG.
+ * @returns {string} the SVG with every href value as valid XML.
+ */
+function escapeLinkAddresses(svgText) {
+    return svgText.replace(/(\s(?:xlink:)?href=")([^"]*)"/g, (whole, start, address) => start + address.replace(/&(?!(?:[A-Za-z]+|#\d+|#x[0-9A-Fa-f]+);)/g, '&amp;').replace(/</g, '&lt;') + '"');
 }
 
 /**

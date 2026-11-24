@@ -7,7 +7,7 @@
  */
 
 import { escapeMarkup } from './typst-text.js?v=3';
-import { state, getLineStart } from './state.js?v=2';
+import { state, getLineStart } from './state.js?v=3';
 
 /** A list item with a number at the start of a line (quote markers and indentation first). */
 const NUMBERED_ITEM = /^([ \t]*(?:>[ \t]?)*[ \t]*)(\d+)([.)])(?=[ \t])/;

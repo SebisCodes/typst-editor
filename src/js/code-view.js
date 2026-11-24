@@ -8,12 +8,14 @@
  * framed on the page while the code has the focus.
  */
 
-import { highlight, escapeHtml } from './typst.js?v=7';
-import { state, ui, areas, NARROW_SCREEN, LINE_HEIGHT, getLineStart } from './state.js?v=2';
-import { updateHistoryButtons, addHistoryStep } from './history.js?v=3';
-import { startCompileSoon, COMPILE_DELAY } from './compile.js?v=3';
-import { startSaveSoon } from './storage.js?v=3';
-import { showSourceMark, hideSourceMark } from './source-mark.js?v=3';
+import { highlight, escapeHtml } from './typst.js?v=8';
+import { state, ui, areas, NARROW_SCREEN, LINE_HEIGHT, getLineStart } from './state.js?v=3';
+import { updateHistoryButtons, addHistoryStep } from './history.js?v=4';
+import { startCompileSoon, COMPILE_DELAY } from './compile.js?v=4';
+import { startSaveSoon } from './storage.js?v=4';
+import { showSourceMark, hideSourceMark } from './source-mark.js?v=4';
+import { buildHighlightWithTemplateTags, convertTemplateTagsToLetters } from './template-tags.js?v=2';
+import { TEMPLATE_SYNTAX } from './typst-template.js?v=1';
 
 /** Code longer than this is shown without highlighting. */
 const MAX_HIGHLIGHT_LENGTH = 600000;
@@ -48,12 +50,23 @@ let lineCount = 0;
  */
 export function renderCode() {
     const code = state.code;
-    ui.hl.innerHTML = code.length < MAX_HIGHLIGHT_LENGTH ? highlight(code) + '\n' : escapeHtml(code) + '\n';
+    ui.hl.innerHTML = code.length < MAX_HIGHLIGHT_LENGTH ? highlightCode(code) + '\n' : escapeHtml(code) + '\n';
     renderProblemMarks();
     lineCount = code.split('\n').length;
     areas.lineWrap.update(code);
     renderStatus();
     updateHistoryButtons();
+}
+
+/**
+ * Returns the code highlighted; with a template syntax the code is highlighted with each tag read
+ * as plain text, and the tags are put back as written, in the colors of the text around them.
+ * @param {string} code - the code.
+ * @returns {string} the highlighted HTML.
+ */
+function highlightCode(code) {
+    if (!TEMPLATE_SYNTAX) return highlight(code);
+    return buildHighlightWithTemplateTags(highlight(convertTemplateTagsToLetters(code, TEMPLATE_SYNTAX)), TEMPLATE_SYNTAX, code);
 }
 
 /**

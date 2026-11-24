@@ -8,8 +8,9 @@
  * h heading text.
  *
  * The reader keeps one position in the code and its steps call each other as the brackets
- * nest, so it stays one closure in one file. The stability test imports
- * this file and calls highlight(): the name stays.
+ * nest, so it stays one closure in one file. The same reader also tells where markup, code,
+ * strings, comments, raw text and math start (getCodeContexts), for template placeholders. The
+ * stability test imports this file and calls highlight(): the name stays.
  */
 
 const KEYWORDS = new Set('let set show if else for in while break continue return import include as context and or not none auto true false'.split(' '));
@@ -44,20 +45,82 @@ export function highlight(code) {
 }
 
 /**
+ * Where a kind of code starts, as the reader of the highlighting reads it.
+ * @typedef {object} CodeContext
+ * @property {number} start - the offset where it starts.
+ * @property {string} context - markup, code, string, comment, raw or math.
+ */
+
+/**
+ * Returns where each kind of code starts: markup, code (after # and in brackets of code),
+ * strings, comments, raw text and math, in the order of the code. Here the reader reads strings,
+ * raw text and comments as the compiler does: a string runs to its closing quote across lines, raw
+ * text also stands in code, strings and comments also stand in math, and #"…" in markup is a
+ * string (the highlighting keeps a string to its line, so an opening quote being typed colors one
+ * line). Very deep nesting gives the whole code as markup.
+ * @param {string} code - the Typst code.
+ * @returns {CodeContext[]} the starts, in order; at one offset the last one holds.
+ */
+export function getCodeContexts(code) {
+    const contexts = [];
+    try { highlightCode(code, contexts); } catch (e) { return [{ start: 0, context: 'markup' }]; }
+    return contexts;
+}
+
+/**
+ * Returns the kind of code at an offset.
+ * @param {CodeContext[]} contexts - the starts (getCodeContexts).
+ * @param {number} offset - the offset in the code.
+ * @returns {string} markup, code, string, comment, raw or math.
+ */
+export function getContextAt(contexts, offset) {
+    let low = 0, high = contexts.length - 1, best = -1;
+    while (low <= high) {
+        const middle = (low + high) >> 1;
+        if (contexts[middle].start <= offset) { best = middle; low = middle + 1; } else high = middle - 1;
+    }
+    return best < 0 ? 'markup' : contexts[best].context;
+}
+
+/**
  * Returns the code highlighted as HTML: markup at the top, each stray closing bracket as text.
  * @param {string} src - the Typst code.
+ * @param {?CodeContext[]} [contexts=null] - a list to add where each kind of code starts; null to skip it.
  * @returns {string} the HTML.
  * @throws {RangeError} when the nesting is too deep for the call stack.
  */
-function highlightCode(src) {
+function highlightCode(src, contexts = null) {
     let i = 0;
     const n = src.length;
     let out = '';
+    /** The kinds of code the reader is in, innermost last. */
+    const openContexts = [];
     while (i < n) {
         out += readMarkup(null);
         if (i < n) { out += escapeHtml(src[i]); i++; }   // a stray closing bracket at the top
     }
     return out;
+
+    /**
+     * Notes that a kind of code starts at the position.
+     * @param {string} context - markup, code, string, comment, raw or math.
+     * @returns {void}
+     */
+    function addContextStart(context) {
+        if (!contexts) return;
+        openContexts.push(context);
+        contexts.push({ start: i, context });
+    }
+
+    /**
+     * Notes that the innermost kind of code ends at the position: the one around it goes on.
+     * @returns {void}
+     */
+    function addContextEnd() {
+        if (!contexts) return;
+        openContexts.pop();
+        contexts.push({ start: i, context: openContexts[openContexts.length - 1] || 'markup' });
+    }
 
     /**
      * Returns text in a span of a class.
@@ -94,11 +157,13 @@ function highlightCode(src) {
      * @returns {string} the highlighted comment.
      */
     function readComment() {
+        addContextStart('comment');
         if (src[i + 1] === '/') {
             const lineEnd = src.indexOf('\n', i);
             const end = lineEnd < 0 ? n : lineEnd;
             const text = src.slice(i, end);
             i = end;
+            addContextEnd();
             return formatSpan('c', text);
         }
         let depth = 0, k = i;
@@ -109,33 +174,43 @@ function highlightCode(src) {
         }
         const text = src.slice(i, k);
         i = k;
+        addContextEnd();
         return formatSpan('c', text);
     }
 
     /**
-     * Reads a string at the position, to its closing quote or the end of its line.
+     * Reads a string at the position, to its closing quote or the end of its line (for the kinds
+     * of code: to its closing quote).
      * @returns {string} the highlighted string.
      */
     function readString() {
+        addContextStart('string');
         let k = i + 1;
-        while (k < n && src[k] !== '"' && src[k] !== '\n') k += src[k] === '\\' ? 2 : 1;
+        while (k < n && src[k] !== '"' && (contexts || src[k] !== '\n')) k += src[k] === '\\' ? 2 : 1;
         k = Math.min(n, k + 1);
         const text = src.slice(i, k);
         i = k;
+        addContextEnd();
         return formatSpan('s', text);
     }
 
     /**
-     * Reads math at the position, from $ to $.
+     * Reads math at the position, from $ to $ (for the kinds of code also the strings and comments
+     * in it, where a $ stays inside).
      * @returns {string} the highlighted math.
      */
     function readMath() {
-        let k = i + 1;
-        while (k < n && src[k] !== '$') k += src[k] === '\\' ? 2 : 1;
-        k = Math.min(n, k + 1);
-        const text = src.slice(i, k);
-        i = k;
-        return formatSpan('d', text);
+        addContextStart('math');
+        const start = i;
+        i++;
+        while (i < n && src[i] !== '$') {
+            if (contexts && src[i] === '"') { readString(); continue; }
+            if (contexts && src[i] === '/' && (src[i + 1] === '/' || src[i + 1] === '*')) { readComment(); continue; }
+            i += src[i] === '\\' ? 2 : 1;
+        }
+        i = Math.min(n, i + 1);
+        addContextEnd();
+        return formatSpan('d', src.slice(start, i));
     }
 
     /**
@@ -144,6 +219,7 @@ function highlightCode(src) {
      * @returns {string} the highlighted raw text.
      */
     function readRaw() {
+        addContextStart('raw');
         const ticks = /^`+/.exec(src.slice(i, i + NEAR_LOOK_AHEAD))[0];
         let k;
         if (ticks.length >= 3) { k = src.indexOf(ticks, i + ticks.length); k = k < 0 ? n : k + ticks.length; }
@@ -151,6 +227,7 @@ function highlightCode(src) {
         else { k = src.indexOf('`', i + 1); k = k < 0 ? n : k + 1; }
         const text = src.slice(i, k);
         i = k;
+        addContextEnd();
         return formatSpan('s', text);
     }
 
@@ -162,13 +239,15 @@ function highlightCode(src) {
      */
     function readCode(close, line) {
         let part = '';
+        addContextStart('code');
         while (i < n) {
             const c = src[i];
-            if (c === close) return part;
-            if (line && (c === '\n' || c === ';' || c === ']')) return part;
+            if (c === close) break;
+            if (line && (c === '\n' || c === ';' || c === ']')) break;
             if (c === '/' && (src[i + 1] === '/' || src[i + 1] === '*')) { part += readComment(); continue; }
             if (c === '"') { part += readString(); continue; }
             if (c === '$') { part += readMath(); continue; }
+            if (c === '`' && contexts) { part += readRaw(); continue; }
             if (/\d/.test(c) || (c === '.' && /\d/.test(src[i + 1] || ''))) {
                 const number = NUMBER.exec(src.slice(i, i + NEAR_LOOK_AHEAD));
                 part += formatSpan('e', number[0]);
@@ -183,7 +262,7 @@ function highlightCode(src) {
             if (/\s/.test(c)) {
                 const space = /^\s+/.exec(src.slice(i, i + SPACE_LOOK_AHEAD))[0];
                 const kept = line ? space.split('\n')[0] : space;
-                if (!kept.length) return part;
+                if (!kept.length) break;
                 part += kept;
                 i += kept.length;
                 continue;
@@ -191,6 +270,7 @@ function highlightCode(src) {
             part += formatSpan('p', c);
             i++;
         }
+        addContextEnd();
         return part;
     }
 
@@ -217,10 +297,10 @@ function highlightCode(src) {
      */
     function readEmbedded() {
         const name = getNameAt(i + 1);
-        if (name && LINE_KEYWORDS.has(name)) { i += 1 + name.length; return formatSpan('k', '#' + name) + readCode(null, true); }
+        if (name && LINE_KEYWORDS.has(name)) { addContextStart('code'); i += 1 + name.length; const part = formatSpan('k', '#' + name) + readCode(null, true); addContextEnd(); return part; }
         let part = '';
-        if (name) { part += formatSpan('k', '#' + name); i += 1 + name.length; }
-        else if (src[i + 1] === '(' || src[i + 1] === '{' || src[i + 1] === '[') { part += formatSpan('k', '#'); i++; }
+        if (name) { addContextStart('code'); part += formatSpan('k', '#' + name); i += 1 + name.length; }
+        else if (src[i + 1] === '(' || src[i + 1] === '{' || src[i + 1] === '[') { addContextStart('code'); part += formatSpan('k', '#'); i++; }
         else { i++; return '#'; }
         for (;;) {
             const c = src[i];
@@ -233,6 +313,7 @@ function highlightCode(src) {
                 part += '.' + (/^[([]/.test(src[i] || '') ? formatSpan('k', field) : escapeHtml(field));
                 continue;
             }
+            addContextEnd();
             return part;
         }
     }
@@ -246,6 +327,7 @@ function highlightCode(src) {
      */
     function readMarkup(close) {
         let part = '', heading = false, text = '';
+        addContextStart('markup');
         /**
          * Adds the plain text read so far to the part.
          * @returns {void}
@@ -272,6 +354,7 @@ function highlightCode(src) {
                 continue;
             }
             if (c === '#' && (isNameStart(src[i + 1]) || /[([{]/.test(src[i + 1] || ''))) { addText(); part += readEmbedded(); continue; }
+            if (c === '#' && src[i + 1] === '"' && contexts) { addText(); addContextStart('code'); i++; readString(); addContextEnd(); continue; }
             if (c === '$') { addText(); part += readMath(); continue; }
             if (c === '`') { addText(); part += readRaw(); continue; }
             if (c === '<') { const label = /^<[\p{L}\p{N}_:.-]+>/u.exec(src.slice(i, i + LOOK_AHEAD)); if (label) { addText(); part += formatSpan('e', label[0]); i += label[0].length; continue; } }
@@ -282,6 +365,7 @@ function highlightCode(src) {
         }
         addText();
         if (heading) part += '</span>';
+        addContextEnd();
         return part;
     }
 }

@@ -12,12 +12,12 @@ import { formatString } from './typst-rules.js?v=3';
 import { findFileReferences } from './typst-code.js?v=3';
 import { store } from './files.js?v=10';
 import { assets, getFreeName, readAsDataUrl } from './assets.js?v=6';
-import { state, areas, showToast } from './state.js?v=2';
-import { setCode } from './history.js?v=3';
-import { startCompile } from './compile.js?v=3';
-import { addSnippet } from './code-insert.js?v=3';
-import { renderInsertPanel } from './insert-panel.js?v=3';
-import { renderFilesTab } from './files-tab.js?v=3';
+import { state, areas, showToast } from './state.js?v=3';
+import { setCode } from './history.js?v=4';
+import { startCompile } from './compile.js?v=4';
+import { addSnippet } from './code-insert.js?v=4';
+import { renderInsertPanel } from './insert-panel.js?v=4';
+import { renderFilesTab } from './files-tab.js?v=4';
 
 /** The media type of a file by its extension. */
 export const FILE_TYPES = {

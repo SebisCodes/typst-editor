@@ -12,12 +12,13 @@
  */
 
 import { findPictures, getPictureMovedTo, getPictureMovedBeside, getPicturesSwapped } from './typst-pictures.js?v=3';
-import { state, ui, NARROW_SCREEN, showToast, getNumberInRange, isCompiled } from './state.js?v=2';
-import { getPictureElements, getPictureCode, getPicturePlaces, getDropPlaces, getDropTarget } from './picture-places.js?v=3';
-import { setCode, addTypingStep } from './history.js?v=3';
-import { showCodePosition } from './code-view.js?v=3';
-import { isTextEditing } from './text-edit.js?v=3';
-import { showPane } from './layout.js?v=3';
+import { state, ui, NARROW_SCREEN, showToast, getNumberInRange, isCompiled } from './state.js?v=3';
+import { getPictureElements, getPictureCode, getPicturePlaces, getDropPlaces, getDropTarget } from './picture-places.js?v=4';
+import { setCode, addTypingStep } from './history.js?v=4';
+import { showCodePosition } from './code-view.js?v=4';
+import { isTextEditing } from './text-edit.js?v=4';
+import { showPane } from './layout.js?v=4';
+import { getCopiedCodeRange } from './template-expansion.js?v=2';
 
 /** How far a mouse or pen moves before the drag starts, in pixels. */
 const MOUSE_DRAG_DISTANCE = 4;
@@ -39,6 +40,8 @@ const MIN_LINE_WIDTH = 20;
 /** The line between blocks is drawn this far above its place, in pixels (half its thickness). */
 const LINE_HALF_THICKNESS = 1;
 const CHANGED_MEANWHILE = 'The code changed meanwhile - the edit was not used';
+/** Pictures that the examples repeat or leave out are moved in the template view. */
+const MOVED_IN_TEMPLATE_VIEW = 'This picture moves in the template view - the examples repeat or leave out pictures here';
 
 /**
  * A drag of a picture, from the press on.
@@ -168,6 +171,7 @@ function stopMoveOnEscape(event) {
  */
 function startMove(move) {
     const calls = findPictures(state.compiledCode || ''), elements = getPictureElements();
+    if (isCompiled() && !isPictureOrderKept(calls)) { showToast(MOVED_IN_TEMPLATE_VIEW); moving = null; return false; }
     move.pic = isCompiled() ? getPictureCode(move.el, calls, elements) : null;
     if (!move.pic) { if (!isCompiled()) showToast(CHANGED_MEANWHILE); moving = null; return false; }
     move.places = getDropPlaces(calls, elements);
@@ -180,6 +184,21 @@ function startMove(move) {
     move.raf = requestAnimationFrame(moveViewAtEdge);
     showDropTarget(move.x, move.y);
     return true;
+}
+
+/**
+ * Tells whether the pictures of the pages stand for the pictures of the code one by one: always
+ * for the code as written; with template placeholders when every picture call of the text the
+ * compiler read is copied text of the call at the same place in the code's order (no section left
+ * one out, no list repeated one).
+ * @param {object[]} calls - the picture calls of the code, each with its place (at).
+ * @returns {boolean} true when the pictures of the pages are the code's, in order.
+ */
+function isPictureOrderKept(calls) {
+    const map = state.viewMap;
+    if (!map) return true;
+    const viewCalls = findPictures(state.viewText);
+    return viewCalls.length === calls.length && viewCalls.every((call, index) => getCopiedCodeRange(map, call.at, call.at + 1)?.start === calls[index].at);
 }
 
 /**

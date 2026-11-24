@@ -12,8 +12,8 @@
 import { store } from './files.js?v=10';
 import { assets } from './assets.js?v=6';
 import { state, areas, showToast } from './state.js?v=3';
-import { setCode } from './history.js?v=4';
-import { showFileName } from './documents.js?v=4';
+import { setCode } from './history.js?v=5';
+import { showFileName } from './documents.js?v=5';
 
 const SETTINGS_KEY = 'typsteditor.v1';
 /** How long after typing the document is stored, in milliseconds. */

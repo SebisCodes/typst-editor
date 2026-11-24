@@ -14,10 +14,10 @@
 import { findPictures, getPictureMovedTo, getPictureMovedBeside, getPicturesSwapped } from './typst-pictures.js?v=3';
 import { state, ui, NARROW_SCREEN, showToast, getNumberInRange, isCompiled } from './state.js?v=3';
 import { getPictureElements, getPictureCode, getPicturePlaces, getDropPlaces, getDropTarget } from './picture-places.js?v=4';
-import { setCode, addTypingStep } from './history.js?v=4';
-import { showCodePosition } from './code-view.js?v=4';
-import { isTextEditing } from './text-edit.js?v=4';
-import { showPane } from './layout.js?v=4';
+import { setCode, addTypingStep } from './history.js?v=5';
+import { showCodePosition } from './code-view.js?v=5';
+import { isTextEditing } from './text-edit.js?v=5';
+import { showPane } from './layout.js?v=5';
 import { getCopiedCodeRange } from './template-expansion.js?v=2';
 
 /** How far a mouse or pen moves before the drag starts, in pixels. */

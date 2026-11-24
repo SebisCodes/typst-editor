@@ -10,10 +10,10 @@
 
 import { highlight, escapeHtml } from './typst.js?v=8';
 import { state, ui, areas, NARROW_SCREEN, LINE_HEIGHT, getLineStart } from './state.js?v=3';
-import { updateHistoryButtons, addHistoryStep } from './history.js?v=4';
-import { startCompileSoon, COMPILE_DELAY } from './compile.js?v=4';
-import { startSaveSoon } from './storage.js?v=4';
-import { showSourceMark, hideSourceMark } from './source-mark.js?v=4';
+import { updateHistoryButtons, addHistoryStep } from './history.js?v=5';
+import { startCompileSoon, COMPILE_DELAY } from './compile.js?v=5';
+import { startSaveSoon } from './storage.js?v=5';
+import { showSourceMark, hideSourceMark } from './source-mark.js?v=5';
 import { buildHighlightWithTemplateTags, convertTemplateTagsToLetters } from './template-tags.js?v=2';
 import { TEMPLATE_SYNTAX } from './typst-template.js?v=1';
 

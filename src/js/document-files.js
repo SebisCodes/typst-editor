@@ -13,11 +13,11 @@ import { findFileReferences } from './typst-code.js?v=3';
 import { store } from './files.js?v=10';
 import { assets, getFreeName, readAsDataUrl } from './assets.js?v=6';
 import { state, areas, showToast } from './state.js?v=3';
-import { setCode } from './history.js?v=4';
-import { startCompile } from './compile.js?v=4';
-import { addSnippet } from './code-insert.js?v=4';
-import { renderInsertPanel } from './insert-panel.js?v=4';
-import { renderFilesTab } from './files-tab.js?v=4';
+import { setCode } from './history.js?v=5';
+import { startCompile } from './compile.js?v=5';
+import { addSnippet } from './code-insert.js?v=5';
+import { renderInsertPanel } from './insert-panel.js?v=5';
+import { renderFilesTab } from './files-tab.js?v=5';
 
 /** The media type of a file by its extension. */
 export const FILE_TYPES = {

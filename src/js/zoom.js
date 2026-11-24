@@ -5,8 +5,8 @@
  */
 
 import { state, ui, NARROW_SCREEN, PIXELS_PER_POINT, POINTS_PER_MILLIMETER, getElement, getNumberInRange } from './state.js?v=3';
-import { saveState } from './storage.js?v=4';
-import { showSourceMark } from './source-mark.js?v=4';
+import { saveState } from './storage.js?v=5';
+import { showSourceMark } from './source-mark.js?v=5';
 
 /** The page size before the first compile: A4 in millimeters. */
 const A4_WIDTH = 210;

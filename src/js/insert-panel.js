@@ -5,8 +5,8 @@
 
 import { escapeHtml } from './typst.js?v=8';
 import { ui, getElement } from './state.js?v=3';
-import { addSnippet, isInMath, addSnippetByKey } from './code-insert.js?v=4';
-import { renderFilesTab } from './files-tab.js?v=4';
+import { addSnippet, isInMath, addSnippetByKey } from './code-insert.js?v=5';
+import { renderFilesTab } from './files-tab.js?v=5';
 
 const GREEK = 'alpha beta gamma delta epsilon epsilon.alt zeta eta theta theta.alt iota kappa lambda mu nu xi pi rho sigma tau upsilon phi phi.alt chi psi omega Gamma Delta Theta Lambda Xi Pi Sigma Phi Psi Omega'.split(' ');
 /** The letter each name of GREEK shows, in the same order. */

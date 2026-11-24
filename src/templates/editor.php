@@ -347,6 +347,6 @@ addEventListener('message', e =&gt; {
 
 <?php include __DIR__ . '/footer.php'; ?>
 
-<script type="module" src="/js/app.js?v=47"></script>
+<script type="module" src="/js/app.js?v=48"></script>
 </body>
 </html>

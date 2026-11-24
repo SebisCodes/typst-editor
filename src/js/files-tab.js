@@ -12,11 +12,11 @@ import { assets, getDataUrlBytes } from './assets.js?v=6';
 import { openConfirmation } from './dialogs.js?v=5';
 import { saveFile } from './util.js?v=3';
 import { state, ui, areas, NARROW_SCREEN } from './state.js?v=3';
-import { showCodePosition } from './code-view.js?v=4';
-import { startCompile } from './compile.js?v=4';
-import { addSnippet } from './code-insert.js?v=4';
-import { getExtension, getFileKind, isReferenceTo, getInsertCode, addDocumentFile, renameDocumentFile } from './document-files.js?v=4';
-import { showPane } from './layout.js?v=4';
+import { showCodePosition } from './code-view.js?v=5';
+import { startCompile } from './compile.js?v=5';
+import { addSnippet } from './code-insert.js?v=5';
+import { getExtension, getFileKind, isReferenceTo, getInsertCode, addDocumentFile, renameDocumentFile } from './document-files.js?v=5';
+import { showPane } from './layout.js?v=5';
 import { hasTemplatePlaceholder } from './template-tags.js?v=2';
 import { TEMPLATE_SYNTAX } from './typst-template.js?v=1';
 

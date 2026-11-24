@@ -17,9 +17,9 @@ import { getTextStyle } from './typst-text.js?v=3';
 import { state, ui, PIXELS_PER_POINT, showToast, isCompiled } from './state.js?v=3';
 import { isRunInView, getRunOfElement, getCharacterIndex, getTextBox } from './text-runs.js?v=4';
 import { getEditedCode, isInStrong } from './text-breaks.js?v=4';
-import { setCode, addTypingStep } from './history.js?v=4';
-import { showCodePosition } from './code-view.js?v=4';
-import { showSourceMark } from './source-mark.js?v=4';
+import { setCode, addTypingStep } from './history.js?v=5';
+import { showCodePosition } from './code-view.js?v=5';
+import { showSourceMark } from './source-mark.js?v=5';
 
 /** The fonts the pages have as web fonts (page.css); another font the code names is asked of the browser first. */
 const PAGE_FONTS = { 'libertinus serif': '"Libertinus Serif"', 'new computer modern': '"New Computer Modern"', 'dejavu sans mono': '"DejaVu Sans Mono"' };

@@ -194,7 +194,7 @@ def check_views(page, frame):
     wait_for_pages(page, frame)
 
 
-def click_run(page, frame, words):
+def select_text_run(page, frame, words):
     """Clicks the middle of the text run of the pages that holds some words.
 
     Args:
@@ -222,13 +222,13 @@ def check_map(page, frame):
     Returns:
         None: the results are printed.
     """
-    click_run(page, frame, 'Plain words here')
+    select_text_run(page, frame, 'Plain words here')
     editing = frame.evaluate("() => !!document.querySelector('.text-in-place')")
     place = frame.evaluate("() => document.querySelector('#code').selectionStart")
     check_that(editing and CODE.index('Plain words here') <= place <= CODE.index('Plain words here') + 16, f'copied text is edited on the page at its place in the code ({place})')
     frame.evaluate("() => { const field = document.querySelector('.text-in-place'); if (field) field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); }")
     page.wait_for_timeout(300)
-    click_run(page, frame, 'John Doe')
+    select_text_run(page, frame, 'John Doe')
     editing = frame.evaluate("() => !!document.querySelector('.text-in-place')")
     place = frame.evaluate("() => document.querySelector('#code').selectionStart")
     line = CODE.index('Dear {{name}}')

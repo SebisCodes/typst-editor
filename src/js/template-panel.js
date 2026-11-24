@@ -6,9 +6,9 @@
  */
 
 import { state, ui, getElement } from './state.js?v=3';
-import { setCodeRange } from './typing.js?v=4';
-import { addHistoryStep } from './history.js?v=4';
-import { startCompile } from './compile.js?v=4';
+import { setCodeRange } from './typing.js?v=5';
+import { addHistoryStep } from './history.js?v=5';
+import { startCompile } from './compile.js?v=5';
 import { startViewSwitch, showViewSwitch, showViewNote, createPlaceholderBox, getListedPlaceholders } from './template-controls.js?v=2';
 import { TEMPLATE_SYNTAX, getViewMode, setViewMode, isExampleViewFailed, getTemplateExamples } from './preview-views.js?v=1';
 
@@ -26,7 +26,7 @@ export function startTemplateControls() {
     startViewSwitch(getElement('#view-switch'), showChosenView);
     placeholderBox = createPlaceholderBox(getElement('#placeholder-box'), {
         syntax: TEMPLATE_SYNTAX, textarea: ui.ta,
-        insertText: insertCodeText,
+        insertText: editCodeText,
     });
 }
 
@@ -39,7 +39,7 @@ export function startTemplateControls() {
  * @param {number} selectionEnd - where it ends afterwards.
  * @returns {void}
  */
-function insertCodeText(start, end, text, selectionStart, selectionEnd) {
+function editCodeText(start, end, text, selectionStart, selectionEnd) {
     setCodeRange(start, end, text, selectionStart, selectionEnd);
     addHistoryStep();
 }
